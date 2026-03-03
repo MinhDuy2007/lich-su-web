@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 35 25% 97%;
+  --fg: 210 22% 14%;
+  --muted: 34 32% 93%;
+  --card: 0 0% 100%;
+  --border: 24 16% 84%;
+  --primary: 15 90% 46%;
+  --primary-fg: 0 0% 100%;
+}
+
+.dark {
+  --bg: 222 31% 11%;
+  --fg: 45 43% 94%;
+  --muted: 222 24% 18%;
+  --card: 222 27% 15%;
+  --border: 217 20% 24%;
+  --primary: 30 93% 54%;
+  --primary-fg: 223 47% 11%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background-color: hsl(var(--bg));
+  color: hsl(var(--fg));
+  font-family: "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(249, 115, 22, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 80% 0%, rgba(251, 191, 36, 0.1) 0%, transparent 35%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-glass {
+  border: 1px solid hsl(var(--border));
+  background: color-mix(in srgb, hsl(var(--card)) 82%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
