@@ -6,6 +6,7 @@ const coreEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   APP_ENCRYPTION_KEY: z.string().min(32),
   OTP_PEPPER: z.string().min(16),
+  GEMINI_API_KEY: z.string().min(20),
   GEMINI_MODEL: z.string().default("gemma-3-27b-it"),
   NEXT_PUBLIC_APP_URL: z.string().url().optional()
 });

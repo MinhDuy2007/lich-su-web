@@ -1,12 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getPublicEnv } from "@/lib/supabase/public-env";
 
-export function createSupabaseRouteClient(
-  request: NextRequest,
-  response: NextResponse
-) {
-  type CookieOptions = Parameters<NextResponse["cookies"]["set"]>[2];
+export async function createSupabaseRouteClient() {
+  const cookieStore = await cookies();
+  type CookieOptions = Parameters<typeof cookieStore.set>[2];
   const env = getPublicEnv();
   return createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -14,7 +12,7 @@ export function createSupabaseRouteClient(
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return cookieStore.getAll();
         },
         setAll(
           cookiesToSet: Array<{
@@ -24,7 +22,7 @@ export function createSupabaseRouteClient(
           }>
         ) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options as CookieOptions);
+            cookieStore.set(name, value, options as CookieOptions);
           });
         }
       }

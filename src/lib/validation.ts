@@ -81,7 +81,7 @@ export const aiAskSchema = z.object({
 });
 
 export const eventCrudSchema = z.object({
-  slug: z.string().trim().min(3).max(160),
+  slug: z.string().trim().max(160).nullable().optional(),
   title: z.string().trim().min(3).max(255),
   summary: z.string().trim().min(3).max(1000),
   content: z.string().trim().min(10),
@@ -130,3 +130,22 @@ export const ipBanSchema = z.object({
   reason: z.string().max(255).optional(),
   isActive: z.boolean().default(true)
 });
+
+export const profileUpdateSchema = z.object({
+  displayName: z.string().trim().min(2).max(80)
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(8).max(128),
+    newPassword: z.string().min(8).max(128),
+    confirmNewPassword: z.string().min(8).max(128)
+  })
+  .refine((value) => value.newPassword === value.confirmNewPassword, {
+    message: "Mat khau xac nhan khong trung",
+    path: ["confirmNewPassword"]
+  })
+  .refine((value) => value.currentPassword !== value.newPassword, {
+    message: "Mat khau moi khong duoc trung mat khau hien tai",
+    path: ["newPassword"]
+  });

@@ -12,7 +12,12 @@ export function getPublicEnv() {
     return parsedPublicEnv;
   }
 
-  const result = publicEnvSchema.safeParse(process.env);
+  const rawPublicEnv = {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  };
+
+  const result = publicEnvSchema.safeParse(rawPublicEnv);
   if (!result.success) {
     const issues = result.error.issues
       .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
@@ -23,4 +28,3 @@ export function getPublicEnv() {
   parsedPublicEnv = result.data;
   return parsedPublicEnv;
 }
-

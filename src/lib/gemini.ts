@@ -1,34 +1,48 @@
 import { getEnv } from "@/lib/env";
 
 interface GeminiGeneratePayload {
-  apiKey: string;
   prompt: string;
 }
 
-export async function callGeminiGenerate({
-  apiKey,
-  prompt
-}: GeminiGeneratePayload) {
+export async function callGeminiGenerate({ prompt }: GeminiGeneratePayload) {
   const env = getEnv();
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [{ text: prompt }]
-        }
-      ]
-    })
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ]
+      })
+    });
+  } catch {
+    throw new Error("Khong ket noi duoc den Google AI");
+  }
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini loi: ${errorText}`);
+    let message = `Gemini loi HTTP ${response.status}`;
+    try {
+      const errorPayload = (await response.json()) as {
+        error?: { message?: string };
+      };
+      if (errorPayload.error?.message) {
+        message = errorPayload.error.message;
+      }
+    } catch {
+      const rawText = await response.text();
+      if (rawText.trim()) {
+        message = rawText.slice(0, 300);
+      }
+    }
+    throw new Error(message);
   }
 
   const data = (await response.json()) as {
@@ -39,9 +53,8 @@ export async function callGeminiGenerate({
     }>;
   };
 
-  return (
+  const output =
     data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ??
-    ""
-  );
+    "";
+  return output.trim();
 }
-

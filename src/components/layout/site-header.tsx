@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { History, Shield, Sparkles } from "lucide-react";
+import { History, Shield, Sparkles, UserCircle2, UserPlus } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -10,11 +10,17 @@ const navItems = [
   { href: "/", label: "Trang chu" },
   { href: "/tim-kiem", label: "Tim kiem" },
   { href: "/dong-thoi-gian", label: "Dong thoi gian" },
+  { href: "/bang-xep-hang", label: "Bang xep hang" },
   { href: "/thu-vien", label: "Thu vien" },
   { href: "/gioi-thieu", label: "Gioi thieu" }
 ];
 
-export function SiteHeader() {
+interface SiteHeaderProps {
+  isAuthenticated: boolean;
+  showAdmin: boolean;
+}
+
+export function SiteHeader({ isAuthenticated, showAdmin }: SiteHeaderProps) {
   const pathname = usePathname();
   const currentPath = pathname ?? "";
 
@@ -53,20 +59,42 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            className="hidden rounded-xl border border-border bg-card px-3 py-2 text-sm text-fg/80 transition hover:border-primary/40 hover:text-fg md:inline-flex md:items-center md:gap-2"
-            href="/auth/dang-nhap"
-          >
-            <Sparkles className="h-4 w-4" />
-            Dang nhap
-          </Link>
-          <Link
-            className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-fg/80 transition hover:border-primary/40 hover:text-fg md:inline-flex md:items-center md:gap-2"
-            href="/admin"
-          >
-            <Shield className="h-4 w-4" />
-            Admin
-          </Link>
+          {!isAuthenticated ? (
+            <>
+              <Link
+                className="hidden rounded-xl border border-border bg-card px-3 py-2 text-sm text-fg/80 transition hover:border-primary/40 hover:text-fg md:inline-flex md:items-center md:gap-2"
+                href="/auth/dang-ky"
+              >
+                <UserPlus className="h-4 w-4" />
+                Dang ky
+              </Link>
+              <Link
+                className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-fg/80 transition hover:border-primary/40 hover:text-fg md:inline-flex md:items-center md:gap-2"
+                href="/auth/dang-nhap"
+              >
+                <Sparkles className="h-4 w-4" />
+                Dang nhap
+              </Link>
+            </>
+          ) : null}
+          {isAuthenticated ? (
+            <Link
+              className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-fg/80 transition hover:border-primary/40 hover:text-fg md:inline-flex md:items-center md:gap-2"
+              href="/tai-khoan"
+            >
+              <UserCircle2 className="h-4 w-4" />
+              Tai khoan
+            </Link>
+          ) : null}
+          {showAdmin ? (
+            <Link
+              className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-fg/80 transition hover:border-primary/40 hover:text-fg md:inline-flex md:items-center md:gap-2"
+              href="/admin"
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          ) : null}
           <ThemeToggle />
         </div>
       </div>

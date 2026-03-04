@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { CaptchaBox } from "./captcha-box";
 
 export function LoginForm() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [captchaSessionId, setCaptchaSessionId] = useState("");
@@ -32,17 +33,9 @@ export function LoginForm() {
         throw new Error(payload.message ?? "Dang nhap that bai");
       }
 
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.setSession({
-        access_token: payload.data.session.access_token,
-        refresh_token: payload.data.session.refresh_token
-      });
-      if (error) {
-        throw error;
-      }
-
       toast.success("Dang nhap thanh cong");
-      window.location.href = "/";
+      router.push("/");
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Loi he thong");
     } finally {
@@ -98,4 +91,3 @@ export function LoginForm() {
     </form>
   );
 }
-

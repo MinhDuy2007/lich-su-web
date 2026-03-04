@@ -117,25 +117,24 @@ npm run start
 
 Ghi chu:
 
-- `verify:gemini` can bien `GEMINI_TEST_API_KEY` trong shell truoc khi chay.
+- `verify:gemini` can bien `GEMINI_API_KEY` trong shell truoc khi chay.
 - Model mac dinh hien tai: `gemma-3-27b-it` (Google AI Studio / Gemini API).
 - Vi du PowerShell:
 
 ```powershell
-$env:GEMINI_TEST_API_KEY="AIza..."
+$env:GEMINI_API_KEY="AIza..."
 npm run verify:gemini
 ```
 
-## 5.1 Cac buoc them Google API key
+## 5.1 Cac buoc them Google API key (server key)
 
 1. Vao Google AI Studio: `https://aistudio.google.com/apikey`.
 2. Tao API key moi cho du an.
-3. Tren app, dang nhap vao `/thu-vien`, nhap key tai o "Google AI Studio API key ca nhan", bam `Luu key`.
-4. He thong se ma hoa key truoc khi luu vao bang `profiles`.
-5. Neu can test tu command line:
+3. Dat key vao `.env.local` duoi bien `GEMINI_API_KEY`.
+4. Neu can test tu command line:
 
 ```powershell
-$env:GEMINI_TEST_API_KEY="AIza..."
+$env:GEMINI_API_KEY="AIza..."
 npm run verify:gemini
 ```
 
@@ -160,7 +159,7 @@ Neu muon gui OTP thu bang script, hay dien them:
 Luu y:
 
 - Khong hardcode API key.
-- Gemini key cua user duoc ma hoa truoc khi luu DB.
+- He thong chi dung server key qua ENV.
 - Khong in key ra log.
 
 ## 7) Project tree
@@ -251,7 +250,6 @@ Luu y:
 - AI:
   - `POST /api/ai/summarize`
   - `POST /api/ai/ask`
-  - `POST/DELETE /api/ai/key`
 
 ## 9) Bao mat va van hanh
 
@@ -259,4 +257,4 @@ Luu y:
 - Policy tach ro theo `user/moderator/admin`.
 - Co co che rate limit co ban tai API auth/ai.
 - Co chan IP qua bang `ip_bans`.
-- API key/OTP xu ly qua ENV va ma hoa.
+- API key/OTP xu ly qua ENV.

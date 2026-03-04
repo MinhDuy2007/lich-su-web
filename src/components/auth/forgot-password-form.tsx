@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CaptchaBox } from "./captcha-box";
 
@@ -38,6 +39,7 @@ function buildUiError(error: unknown) {
 }
 
 export function ForgotPasswordForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [captchaSessionId, setCaptchaSessionId] = useState("");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
@@ -112,7 +114,8 @@ export function ForgotPasswordForm() {
         throw new Error(buildApiErrorMessage(payload, "Dat lai mat khau that bai"));
       }
       toast.success("Dat lai mat khau thanh cong");
-      window.location.href = "/auth/dang-nhap";
+      router.push("/auth/dang-nhap");
+      router.refresh();
     } catch (err) {
       toast.error(buildUiError(err));
     } finally {

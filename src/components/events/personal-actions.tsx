@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface PersonalActionsProps {
@@ -11,6 +11,30 @@ export function PersonalActions({ eventId }: PersonalActionsProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadStatus() {
+      try {
+        const response = await fetch(`/api/events/id/${eventId}/favorite`, {
+          method: "GET"
+        });
+        const payload = await response.json();
+        if (!cancelled && response.ok && payload.success) {
+          setIsFavorite(Boolean(payload.data.isBookmarked));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingStatus(false);
+        }
+      }
+    }
+    void loadStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
 
   async function toggleFavorite() {
     try {
@@ -20,10 +44,10 @@ export function PersonalActions({ eventId }: PersonalActionsProps) {
       });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.message ?? "Khong cap nhat duoc yeu thich");
+        throw new Error(payload.message ?? "Khong cap nhat duoc bookmark");
       }
-      setIsFavorite(!isFavorite);
-      toast.success(isFavorite ? "Da bo yeu thich" : "Da them vao yeu thich");
+      setIsFavorite(Boolean(payload.data.isBookmarked));
+      toast.success(payload.data.isBookmarked ? "Da luu bookmark" : "Da bo bookmark");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Loi he thong");
     } finally {
@@ -56,11 +80,11 @@ export function PersonalActions({ eventId }: PersonalActionsProps) {
       <h3 className="mb-3 text-lg font-semibold">Hanh dong ca nhan</h3>
       <button
         className="mb-4 rounded-xl border border-primary/50 px-3 py-2 text-sm font-semibold text-primary disabled:opacity-60"
-        disabled={loading}
+        disabled={loading || loadingStatus}
         onClick={toggleFavorite}
         type="button"
       >
-        {isFavorite ? "Bo yeu thich" : "Them vao yeu thich"}
+        {loadingStatus ? "Dang tai..." : isFavorite ? "Da luu" : "Bookmark"}
       </button>
       <textarea
         className="h-24 w-full rounded-xl border border-border bg-card p-3 text-sm"

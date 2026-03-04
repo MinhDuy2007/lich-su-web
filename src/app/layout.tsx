@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import { AppProviders } from "./providers";
-import "@/index.css";
+import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -10,9 +10,9 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "LichSuAI",
+  title: "Tra Cứu Sự Kiện Lịch Sử",
   description:
-    "Nen tang tra cuu su kien lich su voi Supabase, Next.js va Gemini AI."
+    "Chào mừng đến với website tra cứu sự kiện lịch sử của chúng tôi! chúc bạn có một trải nghiệm tuyệt vời"
 };
 
 export default function RootLayout({
@@ -28,4 +28,3 @@ export default function RootLayout({
     </html>
   );
 }
-

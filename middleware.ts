@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const protectedPathPrefixes = ["/admin", "/thu-vien"];
+const protectedPathPrefixes = ["/admin", "/thu-vien", "/tai-khoan", "/profile"];
 const protectedApiPrefixes = ["/api/admin", "/api/ai"];
 
 function isProtectedPath(pathname: string) {
@@ -60,5 +60,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/thu-vien/:path*", "/api/admin/:path*", "/api/ai/:path*"]
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|woff|woff2|ttf|eot)$).*)"
+  ]
 };

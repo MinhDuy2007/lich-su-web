@@ -1,21 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseRouteClient } from "@/lib/supabase/route";
 import { AppRole } from "@/lib/roles";
 
-export async function getAuthUserFromRequest(request: NextRequest) {
-  const response = NextResponse.next();
-  const supabase = createSupabaseRouteClient(request, response);
+export async function getAuthUserFromRequest(_request: NextRequest) {
+  void _request;
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return { user: null, response, supabase };
+    return { user: null, supabase };
   }
 
-  return { user, response, supabase };
+  return { user, supabase };
 }
 
 export async function getUserRole(userId: string): Promise<AppRole | null> {
@@ -43,9 +43,8 @@ export async function requireRole(
   status: number;
   userId?: string;
   role?: AppRole | null;
-  response?: NextResponse;
 }> {
-  const { user, response } = await getAuthUserFromRequest(request);
+  const { user } = await getAuthUserFromRequest(request);
 
   if (!user) {
     return { ok: false, status: 401 };
@@ -56,6 +55,5 @@ export async function requireRole(
     return { ok: false, status: 403 };
   }
 
-  return { ok: true, status: 200, userId: user.id, role, response };
+  return { ok: true, status: 200, userId: user.id, role };
 }
-

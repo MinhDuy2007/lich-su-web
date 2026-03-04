@@ -24,6 +24,7 @@ const required = [
   "SUPABASE_SERVICE_ROLE_KEY",
   "APP_ENCRYPTION_KEY",
   "OTP_PEPPER",
+  "GEMINI_API_KEY",
   "GEMINI_MODEL"
 ];
 

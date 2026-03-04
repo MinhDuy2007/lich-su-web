@@ -11,6 +11,7 @@ export function CaptchaBox({ onChange }: CaptchaBoxProps) {
   const [sessionId, setSessionId] = useState("");
   const [svg, setSvg] = useState("");
   const [answer, setAnswer] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const onChangeRef = useRef(onChange);
 
@@ -20,17 +21,27 @@ export function CaptchaBox({ onChange }: CaptchaBoxProps) {
 
   const refreshCaptcha = useCallback(async () => {
     setLoading(true);
+    setErrorMessage("");
     try {
       const response = await fetch("/api/auth/captcha/new", {
         cache: "no-store"
       });
       const payload = await response.json();
-      if (response.ok && payload.success) {
-        setSessionId(payload.data.sessionId);
-        setSvg(payload.data.svg);
-        setAnswer("");
-        onChangeRef.current({ sessionId: payload.data.sessionId, answer: "" });
+      if (!response.ok || !payload.success || !payload.data?.sessionId || !payload.data?.svg) {
+        throw new Error(payload?.message ?? "Khong tai duoc captcha");
       }
+
+      setSessionId(payload.data.sessionId);
+      setSvg(payload.data.svg);
+      setAnswer("");
+      onChangeRef.current({ sessionId: payload.data.sessionId, answer: "" });
+    } catch (error) {
+      setSessionId("");
+      setSvg("");
+      onChangeRef.current({ sessionId: "", answer: "" });
+      setErrorMessage(
+        error instanceof Error ? error.message : "Khong tai duoc captcha"
+      );
     } finally {
       setLoading(false);
     }
@@ -58,6 +69,7 @@ export function CaptchaBox({ onChange }: CaptchaBoxProps) {
         className="flex min-h-[86px] items-center justify-center rounded-xl border border-border bg-card"
         dangerouslySetInnerHTML={{ __html: svg }}
       />
+      {errorMessage ? <p className="text-xs text-red-500">{errorMessage}</p> : null}
       <input
         className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
         onChange={(event) => {

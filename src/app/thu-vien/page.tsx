@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { SiteShell } from "@/components/layout/site-shell";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { GeminiKeyForm } from "@/components/user/gemini-key-form";
 import { SubmissionForm } from "@/components/user/submission-form";
 
 export const dynamic = "force-dynamic";
@@ -138,7 +137,6 @@ export default async function LibraryPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <GeminiKeyForm />
           <SubmissionForm />
         </div>
       </section>

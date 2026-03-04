@@ -5,9 +5,40 @@ import { parseBody } from "@/lib/parse-body";
 import { eventCrudSchema } from "@/lib/validation";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { syncEventRelations } from "@/lib/admin-events";
+import { slugify } from "@/lib/slug";
 
 interface Params {
   params: Promise<{ id: string }>;
+}
+
+async function resolveUniqueSlugForUpdate(
+  eventId: string,
+  baseValue: string
+) {
+  const admin = createSupabaseAdmin();
+  const normalizedBase = slugify(baseValue).slice(0, 160) || "su-kien";
+  let attempt = 0;
+  let nextSlug = normalizedBase;
+
+  while (attempt < 50) {
+    const { data, error } = await admin
+      .from("events")
+      .select("id")
+      .eq("slug", nextSlug)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    if (!data || data.id === eventId) {
+      return nextSlug;
+    }
+
+    attempt += 1;
+    nextSlug = `${normalizedBase}-${attempt + 1}`.slice(0, 160);
+  }
+
+  return `${normalizedBase}-${Date.now()}`.slice(0, 160);
 }
 
 export async function GET(request: NextRequest, context: Params) {
@@ -46,11 +77,16 @@ export async function PATCH(request: NextRequest, context: Params) {
     return fail(parsed.error ?? "Payload khong hop le", 400);
   }
 
+  const slug = await resolveUniqueSlugForUpdate(
+    id,
+    parsed.data.slug || parsed.data.title
+  );
+
   const admin = createSupabaseAdmin();
   const { error } = await admin
     .from("events")
     .update({
-      slug: parsed.data.slug,
+      slug,
       title: parsed.data.title,
       summary: parsed.data.summary,
       content: parsed.data.content,
@@ -66,6 +102,9 @@ export async function PATCH(request: NextRequest, context: Params) {
     .eq("id", id);
 
   if (error) {
+    if (error.code === "23505") {
+      return fail("Slug da ton tai. Hay doi tieu de hoac thu lai", 409, error.message);
+    }
     return fail("Cap nhat su kien that bai", 500, error.message);
   }
 

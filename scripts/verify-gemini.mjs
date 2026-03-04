@@ -1,8 +1,8 @@
-const apiKey = process.env.GEMINI_TEST_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY;
 const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
 if (!apiKey) {
-  console.error("THIEU_GEMINI_TEST_API_KEY");
+  console.error("THIEU_GEMINI_API_KEY");
   process.exit(1);
 }
 
@@ -34,4 +34,3 @@ const answer =
 
 console.log("GEMINI_OK");
 console.log("ANSWER:", answer.slice(0, 80));
-

@@ -8,6 +8,39 @@ interface AiAssistantPanelProps {
   initialSummary: string | null;
 }
 
+interface ApiEnvelope<T> {
+  success: boolean;
+  message?: string;
+  details?: unknown;
+  data?: T;
+}
+
+async function readApiEnvelope<T>(response: Response) {
+  const raw = await response.text();
+  if (!raw.trim()) {
+    return null;
+  }
+  try {
+    return JSON.parse(raw) as ApiEnvelope<T>;
+  } catch {
+    return null;
+  }
+}
+
+function detailsToText(details: unknown) {
+  if (typeof details === "string" && details.trim()) {
+    return details;
+  }
+  if (details && typeof details === "object") {
+    try {
+      return JSON.stringify(details);
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
+
 export function AiAssistantPanel({
   eventId,
   initialSummary
@@ -31,9 +64,17 @@ export function AiAssistantPanel({
           length: "short"
         })
       });
-      const payload = await response.json();
-      if (!response.ok || !payload.success) {
-        throw new Error(payload.message ?? "Khong the tom tat");
+      const payload = await readApiEnvelope<{ summary: string }>(response);
+      if (!response.ok) {
+        const detailText = detailsToText(payload?.details);
+        throw new Error(
+          detailText ||
+            payload?.message ||
+            `Khong the tom tat (HTTP ${response.status})`
+        );
+      }
+      if (!payload?.success || !payload.data?.summary) {
+        throw new Error(payload?.message ?? "Khong the tom tat");
       }
       setSummary(payload.data.summary);
     } catch (err) {
@@ -56,9 +97,15 @@ export function AiAssistantPanel({
           question
         })
       });
-      const payload = await response.json();
-      if (!response.ok || !payload.success) {
-        throw new Error(payload.message ?? "Khong the hoi AI");
+      const payload = await readApiEnvelope<{ answer: string }>(response);
+      if (!response.ok) {
+        const detailText = detailsToText(payload?.details);
+        throw new Error(
+          detailText || payload?.message || `Khong the hoi AI (HTTP ${response.status})`
+        );
+      }
+      if (!payload?.success || !payload.data?.answer) {
+        throw new Error(payload?.message ?? "Khong the hoi AI");
       }
       setAnswer(payload.data.answer);
     } catch (err) {

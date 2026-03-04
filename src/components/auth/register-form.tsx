@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CaptchaBox } from "./captcha-box";
 
@@ -39,6 +40,7 @@ function buildUiError(error: unknown) {
 }
 
 export function RegisterForm() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -120,7 +122,8 @@ export function RegisterForm() {
       }
 
       toast.success("Dang ky thanh cong. Vui long dang nhap");
-      window.location.href = "/auth/dang-nhap";
+      router.push("/auth/dang-nhap");
+      router.refresh();
     } catch (err) {
       toast.error(buildUiError(err));
     } finally {

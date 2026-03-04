@@ -9,7 +9,7 @@ export default async function AdminModerationPage() {
 
   return (
     <AdminShell pathname="/admin/kiem-duyet">
-      <h1 className="text-3xl font-bold">Kiem duyet de xuat</h1>
+      <h1 className="text-3xl font-bold">Kiểm duyệt nội dung do User đề xuất</h1>
       <ModerationAdmin />
     </AdminShell>
   );

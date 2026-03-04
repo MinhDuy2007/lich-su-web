@@ -19,7 +19,7 @@ export default async function HomePage() {
         <div className="relative z-10 max-w-3xl space-y-5">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
             <Sparkles className="h-4 w-4" />
-            Next.js + Supabase + Gemini
+            Tra Cứu Lịch Sử Việt Nam Tại Đây
           </div>
           <h1 className="text-3xl font-bold leading-tight text-fg md:text-5xl">
             Tra cuu lich su hien dai, co AI tom tat va hoi dap theo su kien

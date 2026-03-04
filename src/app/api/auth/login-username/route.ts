@@ -4,7 +4,7 @@ import { parseBody } from "@/lib/parse-body";
 import { loginSchema } from "@/lib/validation";
 import { verifyCaptchaSession } from "@/lib/auth-flows";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { createSupabaseAnonClient } from "@/lib/supabase/anon";
+import { createSupabaseRouteClient } from "@/lib/supabase/route";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { readClientIp, isIpBanned } from "@/lib/ip-ban";
 
@@ -51,18 +51,16 @@ export async function POST(request: NextRequest) {
     return fail("Tai khoan da bi khoa", 403);
   }
 
-  const anon = createSupabaseAnonClient();
-  const signInResult = await anon.auth.signInWithPassword({
+  const supabase = await createSupabaseRouteClient();
+  const signInResult = await supabase.auth.signInWithPassword({
     email: profile.email,
     password: parsed.data.password
   });
-  if (signInResult.error || !signInResult.data.session) {
+  if (signInResult.error || !signInResult.data.user) {
     return fail("Thong tin dang nhap khong dung", 401);
   }
 
   return ok({
-    session: signInResult.data.session,
     user: signInResult.data.user
   });
 }
-

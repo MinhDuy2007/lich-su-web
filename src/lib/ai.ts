@@ -1,22 +1,4 @@
-import { decryptText } from "@/lib/crypto";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-
-export async function getUserGeminiKey(userId: string) {
-  const admin = createSupabaseAdmin();
-  const { data, error } = await admin
-    .from("profiles")
-    .select("gemini_api_key_encrypted")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data?.gemini_api_key_encrypted) {
-    return null;
-  }
-  try {
-    return decryptText(data.gemini_api_key_encrypted);
-  } catch {
-    return null;
-  }
-}
 
 export async function ensureAiQuota(userId: string, limit = 20) {
   const admin = createSupabaseAdmin();
@@ -75,4 +57,3 @@ export async function increaseAiUsage(userId: string) {
     })
     .eq("id", data.id);
 }
-

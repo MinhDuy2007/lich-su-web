@@ -5,6 +5,34 @@ import { parseBody } from "@/lib/parse-body";
 import { eventCrudSchema } from "@/lib/validation";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { syncEventRelations } from "@/lib/admin-events";
+import { slugify } from "@/lib/slug";
+
+async function resolveUniqueSlug(baseValue: string) {
+  const admin = createSupabaseAdmin();
+  const normalizedBase = slugify(baseValue).slice(0, 160) || "su-kien";
+  let attempt = 0;
+  let nextSlug = normalizedBase;
+
+  while (attempt < 50) {
+    const { data, error } = await admin
+      .from("events")
+      .select("id")
+      .eq("slug", nextSlug)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    if (!data) {
+      return nextSlug;
+    }
+
+    attempt += 1;
+    nextSlug = `${normalizedBase}-${attempt + 1}`.slice(0, 160);
+  }
+
+  return `${normalizedBase}-${Date.now()}`.slice(0, 160);
+}
 
 export async function GET(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
@@ -38,10 +66,11 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createSupabaseAdmin();
+  const slug = await resolveUniqueSlug(parsed.data.slug || parsed.data.title);
   const { data, error } = await admin
     .from("events")
     .insert({
-      slug: parsed.data.slug,
+      slug,
       title: parsed.data.title,
       summary: parsed.data.summary,
       content: parsed.data.content,
@@ -58,6 +87,9 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error || !data) {
+    if (error?.code === "23505") {
+      return fail("Slug da ton tai. Hay doi tieu de hoac thu lai", 409, error.message);
+    }
     return fail("Tao su kien that bai", 500, error?.message);
   }
 

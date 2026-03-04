@@ -22,9 +22,14 @@ export async function createSupabaseServerClient() {
             options?: Record<string, unknown>;
           }>
         ) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options as CookieOptions);
-          });
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options as CookieOptions);
+            });
+          } catch {
+            // Server Components cannot mutate cookies.
+            // Session refresh must be handled in middleware/route handlers.
+          }
         }
       }
     }
