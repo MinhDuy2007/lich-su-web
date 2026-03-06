@@ -16,7 +16,7 @@ export async function parseBody<T>(
 
     return { data: result.data, error: null };
   } catch {
-    return { data: null, error: "Payload JSON khong hop le" };
+    return { data: null, error: "Payload JSON không hợp lệ" };
   }
 }
 

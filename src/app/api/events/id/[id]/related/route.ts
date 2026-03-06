@@ -9,7 +9,7 @@ interface Params {
 export async function GET(_: NextRequest, context: Params) {
   const { id } = await context.params;
   if (!id) {
-    return fail("Thieu id su kien", 400);
+    return fail("Thiếu id sự kiện", 400);
   }
 
   const items = await getRelatedEvents(id);

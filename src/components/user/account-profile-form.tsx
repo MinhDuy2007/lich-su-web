@@ -89,7 +89,7 @@ export function AccountProfileForm({ initialData }: AccountProfileFormProps) {
       });
       const payload = await parseApiPayload(response);
       if (!response.ok || !payload.success || !payload.data) {
-        throw new Error(formatApiMessage(payload, "Khong cap nhat duoc profile"));
+        throw new Error(formatApiMessage(payload, "Không cập nhật được hồ sơ"));
       }
 
       setDisplayName(payload.data.display_name);
@@ -97,10 +97,10 @@ export function AccountProfileForm({ initialData }: AccountProfileFormProps) {
       setBookmarkCount(payload.data.bookmarkCount);
       setContributionCount(payload.data.contributionCount);
       setAvatarFile(null);
-      toast.success("Da cap nhat ho so");
+      toast.success("Đã cập nhật hồ sơ");
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Loi he thong");
+      toast.error(error instanceof Error ? error.message : "Lỗi hệ thống");
     } finally {
       setLoading(false);
     }
@@ -108,9 +108,9 @@ export function AccountProfileForm({ initialData }: AccountProfileFormProps) {
 
   return (
     <section className="card-glass rounded-2xl p-5 md:p-6">
-      <h2 className="text-xl font-semibold">Thong tin tai khoan</h2>
+      <h2 className="text-xl font-semibold">Thông tin tài khoản</h2>
       <p className="mt-1 text-sm text-fg/65">
-        Ban chi duoc sua avatar va ten hien thi.
+        Bạn có thể cập nhật tên hiển thị và ảnh đại diện.
       </p>
 
       <form className="mt-5 space-y-4" onSubmit={onSubmit}>
@@ -118,7 +118,7 @@ export function AccountProfileForm({ initialData }: AccountProfileFormProps) {
           <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-border bg-card">
             {avatarUrl ? (
               <Image
-                alt="Avatar"
+                alt="Ảnh đại diện"
                 className="object-cover"
                 fill
                 sizes="80px"
@@ -126,25 +126,25 @@ export function AccountProfileForm({ initialData }: AccountProfileFormProps) {
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs text-fg/60">
-                Khong co avatar
+                Chưa có ảnh đại diện
               </div>
             )}
           </div>
           <div className="flex-1 space-y-2">
-            <label className="block text-sm font-medium">Avatar</label>
+            <label className="block text-sm font-medium">Ảnh đại diện</label>
             <input
               accept="image/*"
               className="block w-full text-sm text-fg/80 file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-fg"
               onChange={(event) => onPickAvatar(event.target.files?.[0] ?? null)}
               type="file"
             />
-            <p className="text-xs text-fg/60">Toi da 2MB, dinh dang anh.</p>
+            <p className="text-xs text-fg/60">Tối đa 2MB, chỉ nhận tệp ảnh.</p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">Ten hien thi</label>
+            <label className="mb-1 block text-sm font-medium">Tên hiển thị</label>
             <input
               className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
               maxLength={80}
@@ -170,7 +170,7 @@ export function AccountProfileForm({ initialData }: AccountProfileFormProps) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Ngay tham gia</label>
+            <label className="mb-1 block text-sm font-medium">Ngày tham gia</label>
             <input
               className="h-11 w-full cursor-not-allowed rounded-xl border border-border bg-muted px-3 text-sm text-fg/70"
               disabled
@@ -181,11 +181,11 @@ export function AccountProfileForm({ initialData }: AccountProfileFormProps) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-border bg-card p-3">
-            <p className="text-xs text-fg/65">So su kien da bookmark</p>
+            <p className="text-xs text-fg/65">Sự kiện đã lưu</p>
             <p className="mt-1 text-2xl font-semibold text-primary">{bookmarkCount}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-3">
-            <p className="text-xs text-fg/65">So dong gop duoc duyet</p>
+            <p className="text-xs text-fg/65">Đóng góp đã duyệt</p>
             <p className="mt-1 text-2xl font-semibold text-primary">{contributionCount}</p>
           </div>
         </div>
@@ -195,7 +195,7 @@ export function AccountProfileForm({ initialData }: AccountProfileFormProps) {
           disabled={loading}
           type="submit"
         >
-          {loading ? "Dang cap nhat..." : "Luu thay doi"}
+          {loading ? "Đang cập nhật..." : "Lưu thay đổi"}
         </button>
       </form>
     </section>

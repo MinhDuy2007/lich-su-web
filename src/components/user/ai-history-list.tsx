@@ -33,13 +33,13 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
       });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.message ?? "Khong xoa duoc lich su");
+        throw new Error(payload.message ?? "Không xóa được lịch sử");
       }
       setRows([]);
       setSelectedId("");
-      toast.success("Da xoa toan bo lich su AI");
+      toast.success("Đã xóa toàn bộ lịch sử AI");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Loi he thong");
+      toast.error(error instanceof Error ? error.message : "Lỗi hệ thống");
     } finally {
       setLoading("none");
     }
@@ -53,7 +53,7 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
       });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.message ?? "Khong xoa duoc ban ghi");
+        throw new Error(payload.message ?? "Không xóa được bản ghi");
       }
 
       setRows((prev) => prev.filter((item) => item.id !== id));
@@ -61,9 +61,9 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
         const next = rows.find((item) => item.id !== id);
         setSelectedId(next?.id ?? "");
       }
-      toast.success("Da xoa ban ghi");
+      toast.success("Đã xóa bản ghi");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Loi he thong");
+      toast.error(error instanceof Error ? error.message : "Lỗi hệ thống");
     } finally {
       setLoading("none");
     }
@@ -90,7 +90,7 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
             onClick={() => void clearAll()}
             type="button"
           >
-            {loading === "clear" ? "Dang xoa..." : "Clear all"}
+            {loading === "clear" ? "Đang xóa..." : "Xóa tất cả"}
           </button>
         </div>
         <ul className="space-y-2">
@@ -106,7 +106,7 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
                 type="button"
               >
                 <p className="text-xs text-fg/60">
-                  {item.role === "user" ? "Nguoi dung" : "Tro ly"} -{" "}
+                  {item.role === "user" ? "Người dùng" : "Trợ lý"} -{" "}
                   {new Date(item.createdAt).toLocaleString("vi-VN")}
                 </p>
                 <p className="mt-1 line-clamp-2">{item.content}</p>
@@ -122,7 +122,7 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
             <div className="mb-3 flex items-center justify-between gap-2">
               <div>
                 <p className="text-xs uppercase tracking-wide text-fg/60">
-                  {selected.role === "user" ? "Cau hoi user" : "Phan hoi AI"}
+                  {selected.role === "user" ? "Câu hỏi người dùng" : "Phản hồi AI"}
                 </p>
                 <p className="text-xs text-fg/55">
                   {new Date(selected.createdAt).toLocaleString("vi-VN")}
@@ -134,7 +134,7 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
                 onClick={() => void removeOne(selected.id)}
                 type="button"
               >
-                {loading === "remove" ? "Dang xoa..." : "Xoa ban ghi"}
+                {loading === "remove" ? "Đang xóa..." : "Xóa bản ghi"}
               </button>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 text-sm leading-7 text-fg/80">

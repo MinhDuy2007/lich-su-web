@@ -19,12 +19,12 @@ interface CsvEventRow {
 export async function POST(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok || !access.userId) {
-    return fail("Khong du quyen", access.status);
+    return fail("Không đủ quyền", access.status);
   }
 
   const { csvText } = (await request.json()) as { csvText?: string };
   if (!csvText || csvText.trim().length === 0) {
-    return fail("csvText la bat buoc", 400);
+    return fail("csvText là bắt buộc", 400);
   }
 
   const parsed = Papa.parse<CsvEventRow>(csvText, {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     skipEmptyLines: true
   });
   if (parsed.errors.length > 0) {
-    return fail("CSV khong hop le", 400, parsed.errors);
+    return fail("CSV không hợp lệ", 400, parsed.errors);
   }
 
   const rows = parsed.data
@@ -53,13 +53,13 @@ export async function POST(request: NextRequest) {
     }));
 
   if (rows.length === 0) {
-    return fail("Khong co dong hop le de import", 400);
+    return fail("Không có dòng hợp lệ để import", 400);
   }
 
   const admin = createSupabaseAdmin();
   const { data, error } = await admin.from("events").insert(rows).select("id");
   if (error) {
-    return fail("Import that bai", 500, error.message);
+    return fail("Import thất bại", 500, error.message);
   }
 
   return ok({

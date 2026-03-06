@@ -45,15 +45,15 @@ export function ChangePasswordForm() {
       });
       const payload = await parseApiPayload(response);
       if (!response.ok || !payload.success) {
-        throw new Error(buildApiMessage(payload, "Khong doi duoc mat khau"));
+        throw new Error(buildApiMessage(payload, "Không đổi được mật khẩu"));
       }
 
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
-      toast.success("Da doi mat khau thanh cong");
+      toast.success("Đã đổi mật khẩu thành công");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Loi he thong");
+      toast.error(error instanceof Error ? error.message : "Lỗi hệ thống");
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export function ChangePasswordForm() {
           disabled={loading}
           type="submit"
         >
-          {loading ? "Dang cap nhat..." : "Doi mat khau"}
+          {loading ? "Đang cập nhật..." : "Đổi mật khẩu"}
         </button>
       </form>
     </section>

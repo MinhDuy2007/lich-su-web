@@ -30,14 +30,14 @@ export function LoginForm() {
       });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.message ?? "Dang nhap that bai");
+        throw new Error(payload.message ?? "Đăng nhập thất bại");
       }
 
-      toast.success("Dang nhap thanh cong");
+      toast.success("Đăng nhập thành công");
       router.push("/");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Loi he thong");
+      toast.error(err instanceof Error ? err.message : "Lỗi hệ thống");
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export function LoginForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div>
-        <label className="mb-1 block text-sm font-medium">Ten dang nhap</label>
+        <label className="mb-1 block text-sm font-medium">Tên đăng nhập</label>
         <input
           className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
           onChange={(event) => setUsername(event.target.value)}
@@ -55,7 +55,7 @@ export function LoginForm() {
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium">Mat khau</label>
+        <label className="mb-1 block text-sm font-medium">Mật khẩu</label>
         <input
           className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
           onChange={(event) => setPassword(event.target.value)}
@@ -77,15 +77,15 @@ export function LoginForm() {
         disabled={loading}
         type="submit"
       >
-        {loading ? "Dang xu ly..." : "Dang nhap"}
+        {loading ? "Đang xử lý..." : "Đăng nhập"}
       </button>
 
       <div className="flex items-center justify-between text-sm">
         <Link className="text-primary underline-offset-2 hover:underline" href="/auth/quen-mat-khau">
-          Quen mat khau?
+          Quên mật khẩu?
         </Link>
         <Link className="text-primary underline-offset-2 hover:underline" href="/auth/dang-ky">
-          Tao tai khoan
+          Tạo tài khoản
         </Link>
       </div>
     </form>

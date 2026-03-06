@@ -1,11 +1,10 @@
 import { SiteShell } from "@/components/layout/site-shell";
 
 const items = [
-  "Tim kiem su kien bang bo loc da tieu chi",
-  "Dang ky, dang nhap, OTP qua Supabase Auth Email va captcha SVG",
-  "Quan tri su kien, tag, nguon, kiem duyet va import/export",
-  "AI tom tat va hoi dap voi Gemini, co cache DB",
-  "Dong bo favorites, history, notes cho moi tai khoan"
+  "Tìm sự kiện theo từ khóa, mốc thời gian và chủ đề.",
+  "Lưu sự kiện, ghi chú cá nhân, xem lại khi cần.",
+  "Hỏi AI để tóm tắt nhanh hoặc làm rõ nội dung.",
+  "Đóng góp dữ liệu và theo dõi trạng thái duyệt."
 ];
 
 export default function AboutPage() {
@@ -13,11 +12,10 @@ export default function AboutPage() {
     <SiteShell>
       <section className="space-y-6">
         <header className="card-glass rounded-3xl p-8">
-          <h1 className="text-3xl font-bold">Ve du an LichSuAI</h1>
+          <h1 className="text-3xl font-bold">Giới thiệu LịchSửAI</h1>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-fg/75">
-            Day la he thong full-stack theo stack Next.js + Supabase + Gemini.
-            Du an huong den khai thac du lieu su kien lich su theo cach hien dai,
-            bo sung AI tom tat de nguoi dung tiep can nhanh hon.
+            LịchSửAI là nền tảng tra cứu sự kiện lịch sử bằng trải nghiệm rõ ràng,
+            dễ dùng và tập trung vào thao tác bạn cần làm ngay.
           </p>
         </header>
 

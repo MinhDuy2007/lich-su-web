@@ -15,7 +15,7 @@ function trimForModel(content: string) {
   if (content.length <= MAX_ASK_INPUT_CHARS) {
     return content;
   }
-  return `${content.slice(0, MAX_ASK_INPUT_CHARS)}\n\n[Noi dung da duoc rut gon de phu hop gioi han token cua mo hinh AI]`;
+  return `${content.slice(0, MAX_ASK_INPUT_CHARS)}\n\n[Nội dung đã được rút gọn để phù hợp giới hạn token của mô hình AI]`;
 }
 
 export async function POST(request: NextRequest) {
@@ -27,22 +27,22 @@ export async function POST(request: NextRequest) {
       windowMs: 60_000
     });
     if (!limiter.allowed) {
-      return fail("Ban dang goi AI qua nhanh", 429);
+      return fail("Bạn đang gọi AI quá nhanh", 429);
     }
 
     const parsed = await parseBody(request, aiAskSchema);
     if (!parsed.data) {
-      return fail(parsed.error ?? "Payload khong hop le", 400);
+      return fail(parsed.error ?? "Payload không hợp lệ", 400);
     }
 
     const { user } = await getAuthUserFromRequest(request);
     if (!user) {
-      return fail("Can dang nhap de dung tinh nang AI", 401);
+      return fail("Cần đăng nhập để dùng tính năng AI", 401);
     }
 
     const quota = await ensureAiQuota(user.id, 20);
     if (quota.remaining <= 0) {
-      return fail("Ban da het luot AI trong ngay", 429);
+      return fail("Bạn đã hết lượt AI trong ngày", 429);
     }
 
     const admin = createSupabaseAdmin();
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       .eq("status", "published")
       .maybeSingle();
     if (!event) {
-      return fail("Su kien khong ton tai", 404);
+      return fail("Sự kiện không tồn tại", 404);
     }
 
     const { data: cachedMessage } = await admin
@@ -76,19 +76,19 @@ export async function POST(request: NextRequest) {
 
     const safeContent = trimForModel(event.content);
     const prompt = [
-      "Ban la tro ly lich su, hay tra loi cau hoi dua tren su kien cho san.",
-      "Neu cau hoi nam ngoai noi dung su kien, hay noi ro pham vi thong tin.",
-      `Su kien: ${event.title}`,
-      `Tom tat: ${event.summary}`,
-      `Noi dung: ${safeContent}`,
-      `Cau hoi: ${parsed.data.question}`
+      "Bạn là trợ lý lịch sử, hãy trả lời câu hỏi dựa trên sự kiện cho sẵn.",
+      "Nếu câu hỏi nằm ngoài nội dung sự kiện, hãy nói rõ phạm vi thông tin.",
+      `Sự kiện: ${event.title}`,
+      `Tóm tắt: ${event.summary}`,
+      `Nội dung: ${safeContent}`,
+      `Câu hỏi: ${parsed.data.question}`
     ].join("\n");
 
     const answer = await callGeminiGenerate({
       prompt
     });
     if (!answer) {
-      return fail("AI khong tra ve cau tra loi", 502);
+      return fail("AI không trả về câu trả lời", 502);
     }
 
     const insertResult = await admin.from("ai_messages").insert([
@@ -119,10 +119,10 @@ export async function POST(request: NextRequest) {
           answer
         });
         if (legacyResult.error) {
-          return fail("Khong luu duoc hoi dap AI", 500, legacyResult.error.message);
+          return fail("Không lưu được hỏi đáp AI", 500, legacyResult.error.message);
         }
       } else {
-        return fail("Khong luu duoc hoi dap AI", 500, insertResult.error.message);
+        return fail("Không lưu được hỏi đáp AI", 500, insertResult.error.message);
       }
     }
 
@@ -133,10 +133,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Loi he thong khi goi AI hoi dap";
+      error instanceof Error ? error.message : "Lỗi hệ thống khi gọi AI hỏi đáp";
     console.error("[ai/ask] unexpected error", {
       message
     });
-    return fail("Khong goi duoc AI luc nay", 500, message);
+    return fail("Không gọi được AI lúc này", 500, message);
   }
 }

@@ -56,6 +56,7 @@ copy .env.example .env.local
 # SUPABASE_SERVICE_ROLE_KEY
 # APP_ENCRYPTION_KEY
 # OTP_PEPPER
+# SUPABASE_EVENT_IMAGES_BUCKET (tuy chon, mac dinh: event-images)
 # MAIL_TEST_EMAIL (tuy chon, chi dung cho npm run verify:mail)
 
 # 4) Chay app
@@ -235,6 +236,7 @@ Luu y:
 - Admin:
   - `GET/POST /api/admin/events`
   - `GET/PATCH/DELETE /api/admin/events/[id]`
+  - `POST /api/admin/events/upload-image`
   - `POST /api/admin/events/import`
   - `GET /api/admin/events/export`
   - `GET/POST /api/admin/tags`

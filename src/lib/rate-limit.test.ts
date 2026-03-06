@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { checkRateLimit } from "./rate-limit";
 
 describe("rate limit", () => {
-  it("chan khi vuot nguong trong cung cua so", () => {
+  it("chặn khi vượt ngưỡng trong cùng cửa sổ", () => {
     const key = `rate-test-${Math.random()}`;
     const first = checkRateLimit({
       key,

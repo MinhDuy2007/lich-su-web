@@ -71,7 +71,7 @@ async function loadHistory(admin: ReturnType<typeof createSupabaseAdmin>, userId
 export async function GET(request: NextRequest) {
   const { user } = await getAuthUserFromRequest(request);
   if (!user) {
-    return fail("Can dang nhap", 401);
+    return fail("Cần đăng nhập", 401);
   }
 
   try {
@@ -80,9 +80,9 @@ export async function GET(request: NextRequest) {
     return ok({ items });
   } catch (error) {
     return fail(
-      "Khong tai duoc lich su AI",
+      "Không tải được lịch sử AI",
       500,
-      error instanceof Error ? error.message : "Loi he thong"
+      error instanceof Error ? error.message : "Lỗi hệ thống"
     );
   }
 }
@@ -90,13 +90,13 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const { user } = await getAuthUserFromRequest(request);
   if (!user) {
-    return fail("Can dang nhap", 401);
+    return fail("Cần đăng nhập", 401);
   }
 
   const admin = createSupabaseAdmin();
   const result = await admin.from("ai_messages").delete().eq("user_id", user.id);
   if (result.error) {
-    return fail("Khong xoa duoc lich su AI", 500, result.error.message);
+    return fail("Không xóa được lịch sử AI", 500, result.error.message);
   }
 
   return ok({ cleared: true });

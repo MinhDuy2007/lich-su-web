@@ -6,9 +6,9 @@ export default function RegisterPage() {
   return (
     <section className="space-y-4">
       <header>
-        <h1 className="text-2xl font-bold">Dang ky tai khoan</h1>
+        <h1 className="text-2xl font-bold">Đăng ký tài khoản</h1>
         <p className="mt-1 text-sm text-fg/70">
-          Hoan tat thong tin, nhan OTP qua Supabase Auth Email va xac thuc captcha.
+          Hoàn tất thông tin để nhận OTP qua email và bắt đầu sử dụng.
         </p>
       </header>
       <RegisterForm />

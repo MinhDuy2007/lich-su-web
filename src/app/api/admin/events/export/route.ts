@@ -7,7 +7,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 export async function GET(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok) {
-    return fail("Khong du quyen", access.status);
+    return fail("Không đủ quyền", access.status);
   }
 
   const admin = createSupabaseAdmin();
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     .order("created_at", { ascending: false });
 
   if (error) {
-    return fail("Khong export duoc du lieu", 500, error.message);
+    return fail("Không export được dữ liệu", 500, error.message);
   }
 
   const csv = Papa.unparse(data ?? []);

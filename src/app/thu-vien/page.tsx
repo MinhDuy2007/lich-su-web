@@ -91,7 +91,7 @@ export default async function LibraryPage() {
                     className="text-primary hover:underline"
                     href={`/su-kien/${item.events?.[0]?.slug ?? ""}`}
                   >
-                    {item.events?.[0]?.title ?? "Su kien"}
+                    {item.events?.[0]?.title ?? "Sự kiện"}
                   </a>
                 </li>
               ))}
@@ -110,7 +110,7 @@ export default async function LibraryPage() {
                     className="text-primary hover:underline"
                     href={`/su-kien/${item.events?.[0]?.slug ?? ""}`}
                   >
-                    {item.events?.[0]?.title ?? "Su kien"}
+                    {item.events?.[0]?.title ?? "Sự kiện"}
                   </a>
                 </li>
               ))}
@@ -125,7 +125,7 @@ export default async function LibraryPage() {
             <ul className="space-y-3 text-sm">
               {noteItems.map((item) => (
                 <li className="rounded-xl border border-border bg-card p-3" key={item.id}>
-                  <p className="font-semibold">{item.events?.[0]?.title ?? "Su kien"}</p>
+                  <p className="font-semibold">{item.events?.[0]?.title ?? "Sự kiện"}</p>
                   <p className="mt-1 line-clamp-3 text-fg/70">{item.content}</p>
                 </li>
               ))}

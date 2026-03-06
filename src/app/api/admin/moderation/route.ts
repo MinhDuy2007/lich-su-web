@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { fail, ok } from "@/lib/api-response";
 import { requireRole } from "@/lib/auth";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
@@ -6,11 +6,12 @@ import { parseBody } from "@/lib/parse-body";
 import { moderationActionSchema } from "@/lib/validation";
 import { syncEventRelations } from "@/lib/admin-events";
 import { slugify } from "@/lib/slug";
+import { pushNotificationToUser } from "@/lib/notifications";
 
 export async function GET(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok) {
-    return fail("Khong du quyen", access.status);
+    return fail("Không đủ quyền", access.status);
   }
 
   const admin = createSupabaseAdmin();
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     .limit(100);
 
   if (error) {
-    return fail("Khong tai duoc danh sach kiem duyet", 500, error.message);
+    return fail("Không tải được danh sách kiểm duyệt", 500, error.message);
   }
 
   return ok({ items: data ?? [] });
@@ -30,12 +31,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok || !access.userId) {
-    return fail("Khong du quyen", access.status);
+    return fail("Không đủ quyền", access.status);
   }
 
   const parsed = await parseBody(request, moderationActionSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const admin = createSupabaseAdmin();
@@ -46,10 +47,10 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (submissionError || !submission) {
-    return fail("Khong tim thay submission", 404);
+    return fail("Không tìm thấy bài gửi", 404);
   }
   if (submission.status !== "pending") {
-    return fail("Submission da duoc xu ly", 400);
+    return fail("Bài gửi đã được xử lý", 400);
   }
 
   if (parsed.data.action === "reject") {
@@ -63,8 +64,20 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", submission.id);
     if (error) {
-      return fail("Tu choi submission that bai", 500, error.message);
+      return fail("Từ chối bài gửi thất bại", 500, error.message);
     }
+
+    try {
+      await pushNotificationToUser(admin, submission.submitted_by, {
+        type: "submission_reviewed",
+        title: "Đề xuất đã được xử lý",
+        body: "Đề xuất của bạn đã bị từ chối. Hãy mở chi tiết để xem ghi chú của quản trị.",
+        link: "/tai-khoan"
+      });
+    } catch {
+      // Do not fail moderation when notification insertion fails.
+    }
+
     return ok({ reviewed: true });
   }
 
@@ -84,11 +97,15 @@ export async function POST(request: NextRequest) {
       created_by: access.userId,
       updated_by: access.userId
     })
-    .select("id")
+    .select("id,slug")
     .single();
 
   if (insertResult.error || !insertResult.data) {
-    return fail("Khong tao duoc event tu submission", 500, insertResult.error?.message);
+    return fail(
+      "Không tạo được sự kiện từ bài gửi",
+      500,
+      insertResult.error?.message
+    );
   }
 
   await syncEventRelations({
@@ -113,10 +130,21 @@ export async function POST(request: NextRequest) {
 
   if (updateSubmissionError) {
     return fail(
-      "Da tao event nhung cap nhat submission that bai",
+      "Đã tạo sự kiện nhưng cập nhật bài gửi thất bại",
       500,
       updateSubmissionError.message
     );
+  }
+
+  try {
+    await pushNotificationToUser(admin, submission.submitted_by, {
+      type: "submission_reviewed",
+      title: "Đề xuất đã được duyệt",
+      body: "Đề xuất sự kiện của bạn đã được duyệt và đăng công khai.",
+      link: insertResult.data.slug ? `/su-kien/${insertResult.data.slug}` : "/tai-khoan"
+    });
+  } catch {
+    // Do not fail moderation when notification insertion fails.
   }
 
   return ok({
@@ -124,4 +152,3 @@ export async function POST(request: NextRequest) {
     eventId: insertResult.data.id
   });
 }
-

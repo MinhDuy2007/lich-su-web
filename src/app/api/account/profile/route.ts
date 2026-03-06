@@ -57,7 +57,7 @@ function buildAvatarPath(userId: string, fileName: string) {
 export async function GET(request: NextRequest) {
   const { user } = await getAuthUserFromRequest(request);
   if (!user) {
-    return fail("Can dang nhap", 401);
+    return fail("Cần đăng nhập", 401);
   }
 
   const admin = createSupabaseAdmin();
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (profileResult.error || !profileResult.data) {
-    return fail("Khong tim thay profile", 404, profileResult.error?.message);
+    return fail("Không tìm thấy hồ sơ", 404, profileResult.error?.message);
   }
 
   const [bookmarkCount, contributionCount] = await Promise.all([
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const { user } = await getAuthUserFromRequest(request);
   if (!user) {
-    return fail("Can dang nhap", 401);
+    return fail("Cần đăng nhập", 401);
   }
 
   const ip = readClientIp(request) ?? "unknown";
@@ -96,7 +96,7 @@ export async function PATCH(request: NextRequest) {
     windowMs: 60_000
   });
   if (!limiter.allowed) {
-    return fail("Ban cap nhat qua nhanh", 429);
+    return fail("Bạn cập nhật quá nhanh", 429);
   }
 
   const formData = await request.formData();
@@ -121,10 +121,10 @@ export async function PATCH(request: NextRequest) {
   const avatarFileCandidate = formData.get("avatar");
   if (avatarFileCandidate && typeof avatarFileCandidate !== "string") {
     if (!avatarFileCandidate.type.startsWith("image/")) {
-      return fail("Avatar phai la file anh", 400);
+      return fail("Ảnh đại diện phải là file ảnh", 400);
     }
     if (avatarFileCandidate.size > MAX_AVATAR_SIZE_BYTES) {
-      return fail("Avatar vuot qua 2MB", 400);
+      return fail("Ảnh đại diện vượt quá 2MB", 400);
     }
 
     const avatarPath = buildAvatarPath(user.id, avatarFileCandidate.name);
@@ -137,7 +137,7 @@ export async function PATCH(request: NextRequest) {
       });
 
     if (uploadResult.error) {
-      return fail("Khong upload duoc avatar", 500, uploadResult.error.message);
+      return fail("Không upload được ảnh đại diện", 500, uploadResult.error.message);
     }
 
     const publicUrl = admin.storage.from("avatars").getPublicUrl(avatarPath).data.publicUrl;
@@ -152,7 +152,7 @@ export async function PATCH(request: NextRequest) {
     .single();
 
   if (updateResult.error) {
-    return fail("Khong cap nhat duoc profile", 500, updateResult.error.message);
+    return fail("Không cập nhật được hồ sơ", 500, updateResult.error.message);
   }
 
   const [bookmarkCount, contributionCount] = await Promise.all([

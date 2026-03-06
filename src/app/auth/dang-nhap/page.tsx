@@ -6,13 +6,12 @@ export default function LoginPage() {
   return (
     <section className="space-y-4">
       <header>
-        <h1 className="text-2xl font-bold">Dang nhap</h1>
+        <h1 className="text-2xl font-bold">Đăng nhập</h1>
         <p className="mt-1 text-sm text-fg/70">
-          Dang nhap bang ten dang nhap, mat khau va ma captcha.
+          Đăng nhập bằng tên tài khoản, mật khẩu và mã xác thực.
         </p>
       </header>
       <LoginForm />
     </section>
   );
 }
-

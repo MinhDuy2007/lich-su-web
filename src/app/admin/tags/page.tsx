@@ -1,4 +1,4 @@
-import { AdminShell } from "@/components/admin/admin-shell";
+﻿import { AdminShell } from "@/components/admin/admin-shell";
 import { TagsAdmin } from "@/components/admin/tags-admin";
 import { requireAdminOrModerator } from "@/lib/access";
 
@@ -9,9 +9,8 @@ export default async function AdminTagsPage() {
 
   return (
     <AdminShell pathname="/admin/tags">
-      <h1 className="text-3xl font-bold">Quan ly tag</h1>
+      <h1 className="text-3xl font-bold">Quản lý thẻ</h1>
       <TagsAdmin />
     </AdminShell>
   );
 }
-

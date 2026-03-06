@@ -1,4 +1,4 @@
-import { AdminShell } from "@/components/admin/admin-shell";
+﻿import { AdminShell } from "@/components/admin/admin-shell";
 import { EventsAdmin } from "@/components/admin/events-admin";
 import { requireAdminOrModerator } from "@/lib/access";
 
@@ -9,9 +9,8 @@ export default async function AdminEventsPage() {
 
   return (
     <AdminShell pathname="/admin/su-kien">
-      <h1 className="text-3xl font-bold">Quan ly su kien</h1>
+      <h1 className="text-3xl font-bold">Quản lý sự kiện</h1>
       <EventsAdmin />
     </AdminShell>
   );
 }
-

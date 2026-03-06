@@ -10,7 +10,7 @@ import { changePasswordSchema } from "@/lib/validation";
 export async function POST(request: NextRequest) {
   const { user } = await getAuthUserFromRequest(request);
   if (!user) {
-    return fail("Can dang nhap", 401);
+    return fail("Cần đăng nhập", 401);
   }
 
   const ip = readClientIp(request) ?? "unknown";
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     windowMs: 60_000
   });
   if (!limiter.allowed) {
-    return fail("Ban dang doi mat khau qua nhanh", 429);
+    return fail("Bạn đang đổi mật khẩu quá nhanh", 429);
   }
 
   const payload = await request.json();
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     .eq("user_id", user.id)
     .maybeSingle();
   if (profileResult.error || !profileResult.data?.email) {
-    return fail("Khong tim thay email tai khoan", 404, profileResult.error?.message);
+    return fail("Không tìm thấy email tài khoản", 404, profileResult.error?.message);
   }
 
   const anon = createSupabaseAnonClient();
@@ -45,14 +45,14 @@ export async function POST(request: NextRequest) {
     password: parsed.data.currentPassword
   });
   if (signInResult.error) {
-    return fail("Mat khau hien tai khong dung", 400);
+    return fail("Mật khẩu hiện tại không đúng", 400);
   }
 
   const updateResult = await admin.auth.admin.updateUserById(user.id, {
     password: parsed.data.newPassword
   });
   if (updateResult.error) {
-    return fail("Khong doi duoc mat khau", 500, updateResult.error.message);
+    return fail("Không đổi được mật khẩu", 500, updateResult.error.message);
   }
 
   return ok({ changed: true });

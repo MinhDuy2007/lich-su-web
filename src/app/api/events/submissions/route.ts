@@ -23,7 +23,7 @@ const submissionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const { user } = await getAuthUserFromRequest(request);
-  if (!user) return fail("Can dang nhap", 401);
+  if (!user) return fail("Cần đăng nhập", 401);
 
   const ip = readClientIp(request) ?? "unknown";
   const limiter = checkRateLimit({
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     windowMs: 10 * 60_000
   });
   if (!limiter.allowed) {
-    return fail("Ban gui de xuat qua nhanh", 429);
+    return fail("Bạn gửi đề xuất quá nhanh", 429);
   }
 
   const json = await request.json();
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     .select("id")
     .single();
   if (error || !data) {
-    return fail("Khong tao duoc de xuat", 500, error?.message);
+    return fail("Không tạo được đề xuất", 500, error?.message);
   }
 
   return ok({ submissionId: data.id }, 201);

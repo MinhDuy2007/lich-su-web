@@ -8,12 +8,12 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 export async function POST(request: NextRequest) {
   const access = await requireRole(request, ["admin"]);
   if (!access.ok || !access.userId) {
-    return fail("Chi admin moi duoc cap nhat role", access.status);
+    return fail("Chỉ admin mới được cập nhật vai trò", access.status);
   }
 
   const parsed = await parseBody(request, roleUpdateSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const admin = createSupabaseAdmin();
@@ -23,9 +23,8 @@ export async function POST(request: NextRequest) {
     granted_by: access.userId
   });
   if (error) {
-    return fail("Cap nhat role that bai", 500, error.message);
+    return fail("Cập nhật vai trò thất bại", 500, error.message);
   }
 
   return ok({ updated: true });
 }
-

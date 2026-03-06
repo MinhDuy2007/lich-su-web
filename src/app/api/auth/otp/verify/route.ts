@@ -7,7 +7,7 @@ import { verifyOtpSession } from "@/lib/auth-flows";
 export async function POST(request: NextRequest) {
   const parsed = await parseBody(request, otpVerifySchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const check = await verifyOtpSession({

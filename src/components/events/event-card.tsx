@@ -19,15 +19,15 @@ export function EventCard({ event }: EventCardProps) {
       <div className="mt-4 space-y-2 text-xs text-fg/65">
         <p className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-primary" />
-          {event.startDate ?? "Chua ro moc thoi gian"}
+          {event.startDate ?? "Chưa rõ mốc thời gian"}
         </p>
         <p className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
-          {event.locationText ?? "Khong ro dia diem"}
+          {event.locationText ?? "Không rõ địa điểm"}
         </p>
         <p className="flex items-center gap-2">
           <Tag className="h-4 w-4 text-primary" />
-          {event.tags.slice(0, 3).join(", ") || "Khong co tag"}
+          {event.tags.slice(0, 3).join(", ") || "Không có thẻ"}
         </p>
       </div>
       <div className="mt-5">

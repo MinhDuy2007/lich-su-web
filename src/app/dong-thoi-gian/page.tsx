@@ -13,7 +13,7 @@ export default async function TimelinePage() {
     .limit(200);
 
   const grouped = (data ?? []).reduce<Record<string, typeof data>>((acc, row) => {
-    const year = row.start_date ? String(new Date(row.start_date).getFullYear()) : "Khong ro";
+    const year = row.start_date ? String(new Date(row.start_date).getFullYear()) : "Không rõ";
     acc[year] = [...(acc[year] ?? []), row];
     return acc;
   }, {});

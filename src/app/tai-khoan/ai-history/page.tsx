@@ -87,9 +87,9 @@ export default async function AccountAiHistoryPage() {
     <SiteShell>
       <section className="space-y-5">
         <header>
-          <h1 className="text-3xl font-bold">Lich su AI chat</h1>
+          <h1 className="text-3xl font-bold">Lịch sử chat</h1>
           <p className="mt-2 text-sm text-fg/70">
-            Xem lai cac cau hoi va phan hoi AI da tao trong qua trinh tra cuu.
+            Xem lại cuộc trò truyện của bạn và AI
           </p>
         </header>
         <AiHistoryList items={items} />

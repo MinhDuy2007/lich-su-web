@@ -12,7 +12,7 @@ const schema = z.object({
 export async function POST(request: NextRequest) {
   const parsed = await parseBody(request, schema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const check = await verifyCaptchaSession({

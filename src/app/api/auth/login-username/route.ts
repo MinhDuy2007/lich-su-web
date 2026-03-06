@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { fail, ok } from "@/lib/api-response";
 import { parseBody } from "@/lib/parse-body";
 import { loginSchema } from "@/lib/validation";
@@ -6,13 +6,14 @@ import { verifyCaptchaSession } from "@/lib/auth-flows";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseRouteClient } from "@/lib/supabase/route";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { readClientIp, isIpBanned } from "@/lib/ip-ban";
+import { isIpBanned, readClientIp } from "@/lib/ip-ban";
+import { trackUserIp } from "@/lib/user-ip-log";
 
 export async function POST(request: NextRequest) {
   const ip = readClientIp(request) ?? "unknown";
 
   if (await isIpBanned(ip)) {
-    return fail("IP cua ban da bi chan", 403);
+    return fail("IP của bạn đã bị chặn", 403);
   }
 
   const limiter = checkRateLimit({
@@ -21,12 +22,12 @@ export async function POST(request: NextRequest) {
     windowMs: 60_000
   });
   if (!limiter.allowed) {
-    return fail("Ban dang thu dang nhap qua nhanh", 429);
+    return fail("Bạn đang thử đăng nhập quá nhanh", 429);
   }
 
   const parsed = await parseBody(request, loginSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const captchaCheck = await verifyCaptchaSession({
@@ -45,10 +46,10 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (profileError || !profile) {
-    return fail("Thong tin dang nhap khong dung", 401);
+    return fail("Thông tin đăng nhập không đúng", 401);
   }
   if (profile.is_banned) {
-    return fail("Tai khoan da bi khoa", 403);
+    return fail("Tài khoản đã bị khóa", 403);
   }
 
   const supabase = await createSupabaseRouteClient();
@@ -57,7 +58,13 @@ export async function POST(request: NextRequest) {
     password: parsed.data.password
   });
   if (signInResult.error || !signInResult.data.user) {
-    return fail("Thong tin dang nhap khong dung", 401);
+    return fail("Thông tin đăng nhập không đúng", 401);
+  }
+
+  try {
+    await trackUserIp(signInResult.data.user.id, ip, request.headers.get("user-agent"));
+  } catch {
+    // Ignore ip logging errors on login flow.
   }
 
   return ok({

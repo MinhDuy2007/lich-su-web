@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
       }
     ]
   },
+  async redirects() {
+    return [
+      {
+        source: "/not-found",
+        destination: "/",
+        permanent: false
+      }
+    ];
+  },
   async headers() {
     return [
       {

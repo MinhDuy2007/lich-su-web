@@ -28,7 +28,7 @@ export function CaptchaBox({ onChange }: CaptchaBoxProps) {
       });
       const payload = await response.json();
       if (!response.ok || !payload.success || !payload.data?.sessionId || !payload.data?.svg) {
-        throw new Error(payload?.message ?? "Khong tai duoc captcha");
+        throw new Error(payload?.message ?? "Không tải được captcha");
       }
 
       setSessionId(payload.data.sessionId);
@@ -40,7 +40,7 @@ export function CaptchaBox({ onChange }: CaptchaBoxProps) {
       setSvg("");
       onChangeRef.current({ sessionId: "", answer: "" });
       setErrorMessage(
-        error instanceof Error ? error.message : "Khong tai duoc captcha"
+        error instanceof Error ? error.message : "Không tải được captcha"
       );
     } finally {
       setLoading(false);
@@ -54,7 +54,7 @@ export function CaptchaBox({ onChange }: CaptchaBoxProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium">Ma xac thuc</label>
+        <label className="text-sm font-medium">Mã xác thực</label>
         <button
           className="inline-flex items-center gap-1 text-xs text-primary"
           disabled={loading}
@@ -62,7 +62,7 @@ export function CaptchaBox({ onChange }: CaptchaBoxProps) {
           type="button"
         >
           <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-          Tai lai
+          Tải lại
         </button>
       </div>
       <div
@@ -77,7 +77,7 @@ export function CaptchaBox({ onChange }: CaptchaBoxProps) {
           setAnswer(next);
           onChangeRef.current({ sessionId, answer: next });
         }}
-        placeholder="Nhap ma xac thuc"
+        placeholder="Nhập mã xác thực"
         value={answer}
       />
     </div>

@@ -86,9 +86,9 @@ export default async function AccountBookmarksPage() {
     <SiteShell>
       <section className="space-y-5">
         <header>
-          <h1 className="text-3xl font-bold">Bookmark su kien</h1>
+          <h1 className="text-3xl font-bold">Bookmark</h1>
           <p className="mt-2 text-sm text-fg/70">
-            Danh sach su kien lich su ban da luu de doc lai sau.
+            Danh sách sự kiện
           </p>
         </header>
         <BookmarkList items={items} />

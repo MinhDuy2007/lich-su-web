@@ -10,14 +10,14 @@ interface Params {
 export async function DELETE(request: NextRequest, context: Params) {
   const access = await requireRole(request, ["admin"]);
   if (!access.ok) {
-    return fail("Chi admin moi duoc go chan IP", access.status);
+    return fail("Chỉ admin mới được gỡ chặn IP", access.status);
   }
 
   const { id } = await context.params;
   const admin = createSupabaseAdmin();
   const { error } = await admin.from("ip_bans").delete().eq("id", id);
   if (error) {
-    return fail("Go chan IP that bai", 500, error.message);
+    return fail("Gỡ chặn IP thất bại", 500, error.message);
   }
 
   return ok({ deleted: true });

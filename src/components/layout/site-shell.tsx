@@ -17,7 +17,10 @@ export async function SiteShell({ children }: SiteShellProps) {
 
   return (
     <div className="min-h-screen">
-      <SiteHeader isAuthenticated={Boolean(user)} showAdmin={role === "admin"} />
+      <SiteHeader
+        isAuthenticated={Boolean(user)}
+        showAdmin={role === "admin" || role === "moderator"}
+      />
       <main className="mx-auto min-h-[calc(100vh-164px)] max-w-7xl px-4 py-8 md:px-6 md:py-10">
         {children}
       </main>

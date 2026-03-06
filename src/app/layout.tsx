@@ -11,8 +11,7 @@ const beVietnamPro = Be_Vietnam_Pro({
 
 export const metadata: Metadata = {
   title: "Tra Cứu Sự Kiện Lịch Sử",
-  description:
-    "Chào mừng đến với website tra cứu sự kiện lịch sử của chúng tôi! chúc bạn có một trải nghiệm tuyệt vời"
+  description: "Tra cứu sự kiện lịch sử nhanh chóng, rõ ràng và dễ theo dõi."
 };
 
 export default function RootLayout({

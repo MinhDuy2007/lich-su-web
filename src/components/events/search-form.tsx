@@ -42,7 +42,7 @@ export function SearchForm() {
         <input
           className="h-11 w-full rounded-xl border border-border bg-card pl-9 pr-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Nhap tu khoa su kien"
+          placeholder="Nhập từ khóa sự kiện"
           value={query}
         />
       </div>

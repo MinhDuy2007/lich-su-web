@@ -1,4 +1,4 @@
-import { AdminShell } from "@/components/admin/admin-shell";
+﻿import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdminOrModerator } from "@/lib/access";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
@@ -22,15 +22,15 @@ export default async function AdminDashboardPage() {
   ]);
 
   const cards = [
-    { label: "Tong su kien", value: eventsCount.count ?? 0 },
-    { label: "Cho kiem duyet", value: submissionsCount.count ?? 0 },
-    { label: "Nguoi dung", value: usersCount.count ?? 0 },
-    { label: "IP dang chan", value: bansCount.count ?? 0 }
+    { label: "Tổng sự kiện", value: eventsCount.count ?? 0 },
+    { label: "Chờ kiểm duyệt", value: submissionsCount.count ?? 0 },
+    { label: "Người dùng", value: usersCount.count ?? 0 },
+    { label: "IP đang chặn", value: bansCount.count ?? 0 }
   ];
 
   return (
     <AdminShell pathname="/admin">
-      <h1 className="text-3xl font-bold">Bang dieu khien quan tri</h1>
+      <h1 className="text-3xl font-bold">Bảng điều khiển quản trị</h1>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <article className="card-glass rounded-2xl p-5" key={card.label}>
@@ -42,4 +42,3 @@ export default async function AdminDashboardPage() {
     </AdminShell>
   );
 }
-

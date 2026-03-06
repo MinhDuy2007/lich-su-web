@@ -76,9 +76,9 @@ export default async function AccountPage() {
     <SiteShell>
       <section className="space-y-6">
         <header>
-          <h1 className="text-3xl font-bold">Tai khoan cua ban</h1>
+          <h1 className="text-3xl font-bold">Tài khoản của bạn</h1>
           <p className="mt-2 text-sm text-fg/70">
-            Quan ly thong tin ca nhan, avatar va mat khau.
+            Quản lí thông tin cá nhân của bạn
           </p>
         </header>
 
@@ -102,19 +102,16 @@ export default async function AccountPage() {
             className="card-glass rounded-2xl p-5 transition hover:border-primary/40"
             href="/tai-khoan/bookmarks"
           >
-            <p className="text-sm font-semibold">Bookmark su kien</p>
+            <p className="text-sm font-semibold">Bookmark</p>
             <p className="mt-1 text-xs text-fg/65">
-              Quan ly danh sach su kien da luu de doc lai.
+              Danh sách sự kiện đã lưu
             </p>
           </Link>
           <Link
             className="card-glass rounded-2xl p-5 transition hover:border-primary/40"
             href="/tai-khoan/ai-history"
           >
-            <p className="text-sm font-semibold">Lich su AI chat</p>
-            <p className="mt-1 text-xs text-fg/65">
-              Xem lai hoi dap va xoa lich su theo nhu cau.
-            </p>
+            <p className="text-sm font-semibold">Lịch sử chat AI</p>
           </Link>
         </div>
       </section>

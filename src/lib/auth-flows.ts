@@ -7,13 +7,13 @@ function mapSupabaseOtpError(rawMessage: string) {
   const message = rawMessage.toLowerCase();
 
   if (message.includes("email rate limit exceeded")) {
-    return "Supabase Auth dang gioi han toc do gui email. Thu lai sau.";
+    return "Supabase Auth đang giới hạn tốc độ gửi email. Thử lại sau.";
   }
   if (message.includes("security purpose")) {
-    return "Yeu cau gui OTP tam thoi bi chan vi ly do bao mat. Thu lai sau.";
+    return "Yêu cầu gửi OTP tạm thời bị chặn vì lý do bảo mật. Thử lại sau.";
   }
   if (message.includes("forbidden")) {
-    return "Supabase Auth Email chua duoc cau hinh day du tren dashboard.";
+    return "Supabase Auth Email chưa được cấu hình đầy đủ trên trang quản trị.";
   }
 
   return `Supabase Auth Email loi: ${rawMessage}`;
@@ -97,17 +97,17 @@ export async function verifyCaptchaSession(payload: {
     .maybeSingle();
 
   if (error || !data) {
-    return { ok: false, message: "Captcha khong ton tai" };
+    return { ok: false, message: "Captcha không tồn tại" };
   }
   if (data.used_at) {
-    return { ok: false, message: "Captcha da duoc su dung" };
+    return { ok: false, message: "Captcha đã được sử dụng" };
   }
   if (new Date(data.expires_at).getTime() < Date.now()) {
-    return { ok: false, message: "Captcha da het han" };
+    return { ok: false, message: "Captcha đã hết hạn" };
   }
 
   if (hashOtpCode(payload.answer.trim().toUpperCase()) !== data.answer_hash) {
-    return { ok: false, message: "Captcha khong dung" };
+    return { ok: false, message: "Captcha không đúng" };
   }
 
   await admin
@@ -132,19 +132,19 @@ export async function verifyOtpSession(payload: {
     .maybeSingle();
 
   if (error || !data) {
-    return { ok: false, message: "OTP request khong ton tai" };
+    return { ok: false, message: "Yêu cầu OTP không tồn tại" };
   }
   if (payload.email && data.email !== payload.email) {
-    return { ok: false, message: "Email khong khop OTP" };
+    return { ok: false, message: "Email không khớp OTP" };
   }
   if (payload.purpose && data.purpose !== payload.purpose) {
-    return { ok: false, message: "OTP sai muc dich" };
+    return { ok: false, message: "OTP sai mục đích" };
   }
   if (data.verified_at) {
-    return { ok: false, message: "OTP da duoc su dung" };
+    return { ok: false, message: "OTP đã được sử dụng" };
   }
   if (new Date(data.expires_at).getTime() < Date.now()) {
-    return { ok: false, message: "OTP da het han" };
+    return { ok: false, message: "OTP đã hết hạn" };
   }
 
   const anon = createSupabaseAnonClient();
@@ -162,7 +162,7 @@ export async function verifyOtpSession(payload: {
       })
       .eq("id", data.id);
 
-    return { ok: false, message: "OTP khong dung hoac da het han" };
+    return { ok: false, message: "OTP không đúng hoặc đã hết hạn" };
   }
 
   await admin

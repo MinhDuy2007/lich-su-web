@@ -17,12 +17,12 @@ export async function POST(request: NextRequest) {
     windowMs: 60_000
   });
   if (!limiter.allowed) {
-    return fail("Qua nhieu yeu cau", 429);
+    return fail("Quá nhiều yêu cầu", 429);
   }
 
   const parsed = await parseBody(request, forgotPasswordSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const captchaCheck = await verifyCaptchaSession({
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     .eq("email", parsed.data.email)
     .maybeSingle();
   if (!profile) {
-    return fail("Email khong ton tai", 404);
+    return fail("Email không tồn tại", 404);
   }
 
   const hourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     .eq("purpose", "forgot_password")
     .gte("created_at", hourAgo);
   if ((hourlyCountResult.count ?? 0) >= 2) {
-    return fail("Da vuot qua gioi han 2 lan gui OTP trong 1 gio", 429);
+    return fail("Đã vượt quá giới hạn 2 lần gửi OTP trong 1 giờ", 429);
   }
 
   const sendResult = await sendSupabaseAuthOtp({
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     purpose: "forgot_password"
   });
   if (!sendResult.ok) {
-    return fail("Khong gui duoc OTP qua email", 500, sendResult.message);
+    return fail("Không gửi được OTP qua email", 500, sendResult.message);
   }
 
   const marker = hashOtpCode(randomUUID());
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error || !data) {
-    return fail("Khong tao duoc OTP", 500, error?.message);
+    return fail("Không tạo được OTP", 500, error?.message);
   }
 
   return ok({

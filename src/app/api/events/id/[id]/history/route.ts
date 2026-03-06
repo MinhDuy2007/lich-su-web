@@ -9,7 +9,7 @@ interface Params {
 
 export async function POST(request: NextRequest, context: Params) {
   const { user } = await getAuthUserFromRequest(request);
-  if (!user) return fail("Can dang nhap", 401);
+  if (!user) return fail("Cần đăng nhập", 401);
 
   const { id } = await context.params;
   const admin = createSupabaseAdmin();
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, context: Params) {
     viewed_at: new Date().toISOString()
   });
   if (error) {
-    return fail("Khong luu duoc lich su", 500, error.message);
+    return fail("Không lưu được lịch sử", 500, error.message);
   }
   return ok({ tracked: true });
 }

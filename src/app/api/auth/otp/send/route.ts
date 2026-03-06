@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { randomUUID } from "node:crypto";
 import { fail, ok } from "@/lib/api-response";
 import { parseBody } from "@/lib/parse-body";
@@ -8,13 +8,18 @@ import { hashOtpCode } from "@/lib/crypto";
 import { sendSupabaseAuthOtp } from "@/lib/auth-flows";
 import { readClientIp } from "@/lib/ip-ban";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  EMAIL_TAKEN_MESSAGE,
+  normalizeEmail
+} from "@/lib/register-availability";
 
 export async function POST(request: NextRequest) {
   const parsed = await parseBody(request, otpSendSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
+  const normalizedEmail = normalizeEmail(parsed.data.email);
   const ip = readClientIp(request) ?? "unknown";
   const limiter = checkRateLimit({
     key: `otp:send:${ip}`,
@@ -23,7 +28,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (!limiter.allowed) {
-    return fail("Ban gui OTP qua nhanh", 429);
+    return fail("Bạn gửi OTP quá nhanh", 429);
   }
 
   const admin = createSupabaseAdmin();
@@ -31,10 +36,10 @@ export async function POST(request: NextRequest) {
     const { data: profileByEmail } = await admin
       .from("profiles")
       .select("user_id")
-      .eq("email", parsed.data.email)
+      .ilike("email", normalizedEmail)
       .maybeSingle();
     if (profileByEmail) {
-      return fail("Email da ton tai", 409);
+      return fail(EMAIL_TAKEN_MESSAGE, 409);
     }
   }
 
@@ -43,20 +48,20 @@ export async function POST(request: NextRequest) {
   const hourlyCountResult = await admin
     .from("otp_requests")
     .select("id", { count: "exact", head: true })
-    .eq("email", parsed.data.email)
+    .eq("email", normalizedEmail)
     .eq("purpose", parsed.data.purpose)
     .gte("created_at", hourAgo);
 
   if ((hourlyCountResult.count ?? 0) >= 2) {
-    return fail("Da vuot qua gioi han 2 lan gui OTP trong 1 gio", 429);
+    return fail("Đã vượt quá giới hạn 2 lần gửi OTP trong 1 giờ", 429);
   }
 
   const sendResult = await sendSupabaseAuthOtp({
-    email: parsed.data.email,
+    email: normalizedEmail,
     purpose: parsed.data.purpose
   });
   if (!sendResult.ok) {
-    return fail("Khong gui duoc OTP qua email", 500, sendResult.message);
+    return fail("Không gửi được OTP qua email", 500, sendResult.message);
   }
 
   const expiresAt = new Date(Date.now() + 60 * 60_000).toISOString();
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await admin
     .from("otp_requests")
     .insert({
-      email: parsed.data.email,
+      email: normalizedEmail,
       purpose: parsed.data.purpose,
       code_hash: marker,
       expires_at: expiresAt,
@@ -75,7 +80,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error || !data) {
-    return fail("Khong luu duoc OTP request", 500, error?.message);
+    return fail("Không lưu được yêu cầu OTP", 500, error?.message);
   }
 
   return ok({

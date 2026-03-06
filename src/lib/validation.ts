@@ -3,7 +3,7 @@ import { z } from "zod";
 export const usernameSchema = z
   .string()
   .trim()
-  .regex(/^[a-z0-9_]{4,30}$/, "Username chi cho phep a-z0-9_ tu 4-30 ky tu");
+  .regex(/^[a-z0-9_]{4,30}$/, "Username chỉ cho phép a-z0-9_ từ 4-30 ký tự");
 
 export const registerSchema = z
   .object({
@@ -12,12 +12,12 @@ export const registerSchema = z
     password: z.string().min(8).max(128),
     confirmPassword: z.string().min(8).max(128),
     otpRequestId: z.string().uuid(),
-    otpCode: z.string().regex(/^\d{6,8}$/),
+    otpCode: z.string().regex(/^\d{8}$/, "OTP phải gồm đúng 8 chữ số"),
     captchaSessionId: z.string().uuid(),
     captchaAnswer: z.string().min(4).max(12)
   })
   .refine((value) => value.password === value.confirmPassword, {
-    message: "Mat khau xac nhan khong trung",
+    message: "Mật khẩu xác nhận không trùng",
     path: ["confirmPassword"]
   });
 
@@ -53,7 +53,7 @@ export const resetPasswordSchema = z
     confirmPassword: z.string().min(8).max(128)
   })
   .refine((value) => value.newPassword === value.confirmPassword, {
-    message: "Mat khau xac nhan khong trung",
+    message: "Mật khẩu xác nhận không trùng",
     path: ["confirmPassword"]
   });
 
@@ -95,6 +95,14 @@ export const eventCrudSchema = z.object({
   people: z.array(z.string()).default([]),
   places: z.array(z.string()).default([]),
   sourceIds: z.array(z.string().uuid()).default([]),
+  customSources: z
+    .array(
+      z.object({
+        name: z.string().trim().min(2).max(255),
+        url: z.string().trim().url().nullable().optional()
+      })
+    )
+    .default([]),
   imageUrls: z.array(z.string().url()).default([])
 });
 
@@ -131,6 +139,37 @@ export const ipBanSchema = z.object({
   isActive: z.boolean().default(true)
 });
 
+export const commentCreateSchema = z.object({
+  content: z.string().trim().min(1).max(2000),
+  parentId: z.string().uuid().nullable().optional()
+});
+
+export const eventReportCreateSchema = z.object({
+  reason: z.string().trim().min(3).max(500),
+  detail: z.string().trim().max(2000).optional()
+});
+
+export const reportReviewSchema = z.object({
+  reportId: z.string().uuid(),
+  status: z.enum(["reviewing", "resolved", "rejected"]),
+  response: z.string().trim().min(3).max(1000)
+});
+
+export const notificationsMarkReadSchema = z
+  .object({
+    ids: z.array(z.string().uuid()).max(100).optional(),
+    markAll: z.boolean().default(false)
+  })
+  .refine((value) => value.markAll || (value.ids?.length ?? 0) > 0, {
+    message: "Thiếu danh sách thông báo cần cập nhật"
+  });
+
+export const adminBroadcastSchema = z.object({
+  title: z.string().trim().min(3).max(160),
+  body: z.string().trim().min(3).max(1000),
+  link: z.string().trim().max(300).optional()
+});
+
 export const profileUpdateSchema = z.object({
   displayName: z.string().trim().min(2).max(80)
 });
@@ -142,10 +181,10 @@ export const changePasswordSchema = z
     confirmNewPassword: z.string().min(8).max(128)
   })
   .refine((value) => value.newPassword === value.confirmNewPassword, {
-    message: "Mat khau xac nhan khong trung",
+    message: "Mật khẩu xác nhận không trùng",
     path: ["confirmNewPassword"]
   })
   .refine((value) => value.currentPassword !== value.newPassword, {
-    message: "Mat khau moi khong duoc trung mat khau hien tai",
+    message: "Mật khẩu mới không được trùng mật khẩu hiện tại",
     path: ["newPassword"]
   });

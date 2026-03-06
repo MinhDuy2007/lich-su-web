@@ -14,7 +14,7 @@ interface Params {
 
 export async function GET(request: NextRequest, context: Params) {
   const { user } = await getAuthUserFromRequest(request);
-  if (!user) return fail("Can dang nhap", 401);
+  if (!user) return fail("Cần đăng nhập", 401);
 
   const { id } = await context.params;
   const admin = createSupabaseAdmin();
@@ -25,18 +25,18 @@ export async function GET(request: NextRequest, context: Params) {
     .eq("event_id", id)
     .maybeSingle();
 
-  if (error) return fail("Khong tai duoc ghi chu", 500, error.message);
+  if (error) return fail("Không tải được ghi chú", 500, error.message);
   return ok({ note: data });
 }
 
 export async function POST(request: NextRequest, context: Params) {
   const { user } = await getAuthUserFromRequest(request);
-  if (!user) return fail("Can dang nhap", 401);
+  if (!user) return fail("Cần đăng nhập", 401);
 
   const json = await request.json();
   const parsed = schema.safeParse(json);
   if (!parsed.success) {
-    return fail("Noi dung ghi chu khong hop le", 400);
+    return fail("Nội dung ghi chú không hợp lệ", 400);
   }
 
   const { id } = await context.params;
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, context: Params) {
       onConflict: "user_id,event_id"
     }
   );
-  if (error) return fail("Khong luu duoc ghi chu", 500, error.message);
+  if (error) return fail("Không lưu được ghi chú", 500, error.message);
 
   return ok({ saved: true });
 }

@@ -1,14 +1,15 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { type ReactNode } from "react";
 import { SiteShell } from "@/components/layout/site-shell";
 
 const adminLinks = [
-  { href: "/admin", label: "Tong quan" },
-  { href: "/admin/su-kien", label: "Su kien" },
-  { href: "/admin/tags", label: "Tag" },
-  { href: "/admin/nguon", label: "Nguon" },
-  { href: "/admin/kiem-duyet", label: "Kiem duyet" },
-  { href: "/admin/nguoi-dung", label: "Nguoi dung" }
+  { href: "/admin", label: "Tổng quan" },
+  { href: "/admin/su-kien", label: "Sự kiện" },
+  { href: "/admin/tags", label: "Thẻ" },
+  { href: "/admin/nguon", label: "Nguồn" },
+  { href: "/admin/kiem-duyet", label: "Kiểm duyệt" },
+  { href: "/admin/nguoi-dung", label: "Người dùng" },
+  { href: "/admin/thong-bao", label: "Thông báo" }
 ];
 
 export function AdminShell({
@@ -46,4 +47,3 @@ export function AdminShell({
     </SiteShell>
   );
 }
-

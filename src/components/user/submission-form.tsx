@@ -27,14 +27,14 @@ export function SubmissionForm() {
       });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.message ?? "Gui de xuat that bai");
+        throw new Error(payload.message ?? "Gửi đề xuất thất bại");
       }
-      toast.success("Da gui de xuat cho admin kiem duyet");
+      toast.success("Đã gửi đề xuất cho quản trị viên kiểm duyệt");
       setTitle("");
       setSummary("");
       setContent("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Loi he thong");
+      toast.error(err instanceof Error ? err.message : "Lỗi hệ thống");
     } finally {
       setLoading(false);
     }
@@ -42,39 +42,43 @@ export function SubmissionForm() {
 
   return (
     <section className="card-glass rounded-2xl p-5">
-      <h2 className="mb-2 text-lg font-semibold">De xuat su kien moi</h2>
+      <h2 className="mb-2 text-lg font-semibold">Đề xuất sự kiện mới</h2>
       <p className="mb-3 text-xs text-fg/65">
-        Noi dung se duoc moderator/admin duyet truoc khi xuat ban.
+        Nội dung sẽ được kiểm duyệt trước khi xuất bản.
       </p>
       <div className="space-y-2">
         <input
           className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Tieu de"
+          placeholder="Tiêu đề"
           value={title}
         />
         <textarea
           className="h-20 w-full rounded-xl border border-border bg-card p-3 text-sm"
           onChange={(event) => setSummary(event.target.value)}
-          placeholder="Mo ta ngan"
+          placeholder="Mô tả ngắn"
           value={summary}
         />
         <textarea
           className="h-28 w-full rounded-xl border border-border bg-card p-3 text-sm"
           onChange={(event) => setContent(event.target.value)}
-          placeholder="Noi dung chi tiet"
+          placeholder="Nội dung chi tiết"
           value={content}
         />
       </div>
       <button
         className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-fg disabled:opacity-60"
-        disabled={loading || title.trim().length < 3 || summary.trim().length < 10 || content.trim().length < 20}
+        disabled={
+          loading ||
+          title.trim().length < 3 ||
+          summary.trim().length < 10 ||
+          content.trim().length < 20
+        }
         onClick={submit}
         type="button"
       >
-        Gui de xuat
+        Gửi đề xuất
       </button>
     </section>
   );
 }
-

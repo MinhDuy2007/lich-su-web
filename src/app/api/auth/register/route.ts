@@ -1,27 +1,45 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { fail, ok } from "@/lib/api-response";
 import { parseBody } from "@/lib/parse-body";
 import { registerSchema } from "@/lib/validation";
-import { findAuthUserByEmail, verifyCaptchaSession, verifyOtpSession } from "@/lib/auth-flows";
+import {
+  findAuthUserByEmail,
+  verifyCaptchaSession,
+  verifyOtpSession
+} from "@/lib/auth-flows";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { readClientIp } from "@/lib/ip-ban";
+import { isIpBanned, readClientIp } from "@/lib/ip-ban";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  EMAIL_TAKEN_MESSAGE,
+  USERNAME_TAKEN_MESSAGE,
+  normalizeEmail,
+  normalizeUsername
+} from "@/lib/register-availability";
+import { trackUserIp } from "@/lib/user-ip-log";
 
 export async function POST(request: NextRequest) {
   const ip = readClientIp(request) ?? "unknown";
+  if (await isIpBanned(ip)) {
+    return fail("Địa chỉ IP của bạn đã bị chặn", 403);
+  }
+
   const limiter = checkRateLimit({
     key: `auth:register:${ip}`,
     limit: 15,
     windowMs: 60_000
   });
   if (!limiter.allowed) {
-    return fail("Too many requests", 429);
+    return fail("Quá nhiều yêu cầu", 429);
   }
 
   const parsed = await parseBody(request, registerSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
+
+  const normalizedUsername = normalizeUsername(parsed.data.username);
+  const normalizedEmail = normalizeEmail(parsed.data.email);
 
   const captchaCheck = await verifyCaptchaSession({
     sessionId: parsed.data.captchaSessionId,
@@ -34,7 +52,7 @@ export async function POST(request: NextRequest) {
   const otpCheck = await verifyOtpSession({
     otpRequestId: parsed.data.otpRequestId,
     otpCode: parsed.data.otpCode,
-    email: parsed.data.email,
+    email: normalizedEmail,
     purpose: "register"
   });
   if (!otpCheck.ok) {
@@ -46,39 +64,39 @@ export async function POST(request: NextRequest) {
   const { data: existingProfile } = await admin
     .from("profiles")
     .select("user_id")
-    .eq("username", parsed.data.username)
+    .eq("username", normalizedUsername)
     .maybeSingle();
   if (existingProfile) {
-    return fail("Username da ton tai", 409);
+    return fail(USERNAME_TAKEN_MESSAGE, 409);
   }
 
-  const verifiedUser =
-    otpCheck.user ?? (await findAuthUserByEmail(parsed.data.email));
+  const verifiedUser = otpCheck.user ?? (await findAuthUserByEmail(normalizedEmail));
   if (!verifiedUser) {
-    return fail("Khong tim thay tai khoan Auth sau khi xac thuc OTP", 404);
+    return fail("Không tìm thấy tài khoản Auth sau khi xác thực OTP", 404);
   }
 
   const { data: emailProfile } = await admin
     .from("profiles")
     .select("user_id")
-    .eq("email", parsed.data.email)
+    .ilike("email", normalizedEmail)
     .maybeSingle();
 
   if (emailProfile && emailProfile.user_id !== verifiedUser.id) {
-    return fail("Email da ton tai", 409);
+    return fail(EMAIL_TAKEN_MESSAGE, 409);
   }
 
   const updateResult = await admin.auth.admin.updateUserById(verifiedUser.id, {
     password: parsed.data.password,
+    email: normalizedEmail,
     email_confirm: true,
     user_metadata: {
       ...(verifiedUser.user_metadata ?? {}),
-      username: parsed.data.username
+      username: normalizedUsername
     }
   });
   if (updateResult.error) {
     return fail(
-      "Khong cap nhat duoc thong tin tai khoan",
+      "Không cập nhật được thông tin tài khoản",
       500,
       updateResult.error.message
     );
@@ -88,10 +106,10 @@ export async function POST(request: NextRequest) {
   const [profileResult, userRoleCheck] = await Promise.all([
     admin.from("profiles").upsert(
       {
-      user_id: userId,
-      username: parsed.data.username,
-      email: parsed.data.email,
-      is_banned: false
+        user_id: userId,
+        username: normalizedUsername,
+        email: normalizedEmail,
+        is_banned: false
       },
       {
         onConflict: "user_id"
@@ -107,7 +125,7 @@ export async function POST(request: NextRequest) {
 
   if (profileResult.error || userRoleCheck.error) {
     return fail(
-      "Tao profile hoac role that bai",
+      "Tạo hồ sơ hoặc vai trò thất bại",
       500,
       profileResult.error?.message ?? userRoleCheck.error?.message ?? null
     );
@@ -121,14 +139,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (roleResult.error) {
-      return fail("Khong tao duoc role mac dinh", 500, roleResult.error.message);
+      return fail("Không tạo được vai trò mặc định", 500, roleResult.error.message);
     }
+  }
+
+  try {
+    await trackUserIp(userId, ip, request.headers.get("user-agent"));
+  } catch {
+    // Do not fail registration if ip logging is unavailable.
   }
 
   return ok(
     {
       userId,
-      username: parsed.data.username
+      username: normalizedUsername
     },
     201
   );

@@ -29,12 +29,12 @@ export function BookmarkList({ items }: BookmarkListProps) {
       });
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.message ?? "Khong bo duoc bookmark");
+        throw new Error(payload.message ?? "Không bỏ được bookmark");
       }
       setRows((prev) => prev.filter((row) => row.eventId !== eventId));
-      toast.success("Da bo bookmark");
+      toast.success("Đã bỏ bookmark");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Loi he thong");
+      toast.error(error instanceof Error ? error.message : "Lỗi hệ thống");
     } finally {
       setRemovingId(null);
     }
@@ -70,7 +70,7 @@ export function BookmarkList({ items }: BookmarkListProps) {
               onClick={() => void removeBookmark(item.eventId)}
               type="button"
             >
-              {removingId === item.eventId ? "Dang xu ly..." : "Bo bookmark"}
+              {removingId === item.eventId ? "Đang xử lý..." : "Bỏ bookmark"}
             </button>
           </div>
         </article>

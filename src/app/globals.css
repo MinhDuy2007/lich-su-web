@@ -60,3 +60,77 @@ a {
     linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
   background-size: 36px 36px;
 }
+
+.tiptap p,
+.rich-content p {
+  margin: 0.75rem 0;
+}
+
+.tiptap h2,
+.rich-content h2 {
+  margin: 1.25rem 0 0.75rem;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+.tiptap h3,
+.rich-content h3 {
+  margin: 1rem 0 0.65rem;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.tiptap ul,
+.tiptap ol,
+.rich-content ul,
+.rich-content ol {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+
+.tiptap blockquote,
+.rich-content blockquote {
+  margin: 0.9rem 0;
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: 0.9rem;
+  color: color-mix(in srgb, hsl(var(--fg)) 78%, transparent);
+}
+
+.tiptap hr,
+.rich-content hr {
+  margin: 1.2rem 0;
+  border: 0;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.tiptap a,
+.rich-content a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}
+
+.tiptap img,
+.rich-content img {
+  margin: 0.8rem 0;
+  max-width: 100%;
+  border-radius: 0.75rem;
+}
+
+.tiptap table,
+.rich-content table {
+  margin: 1rem 0;
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.tiptap th,
+.tiptap td,
+.rich-content th,
+.rich-content td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.65rem 0.75rem;
+  vertical-align: top;
+  min-width: 120px;
+}

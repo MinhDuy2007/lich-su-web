@@ -18,7 +18,7 @@ export function ThemeToggle({ className, ...props }: ThemeToggleProps) {
   if (!mounted) {
     return (
       <button
-        aria-label="doi giao dien"
+        aria-label="đổi giao diện"
         className={cn(
           "h-10 w-10 rounded-xl border border-border bg-card",
           className
@@ -33,7 +33,7 @@ export function ThemeToggle({ className, ...props }: ThemeToggleProps) {
 
   return (
     <button
-      aria-label="doi giao dien"
+      aria-label="đổi giao diện"
       className={cn(
         "h-10 w-10 rounded-xl border border-border bg-card text-fg transition hover:scale-105",
         className

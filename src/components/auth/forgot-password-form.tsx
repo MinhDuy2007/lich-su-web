@@ -33,9 +33,9 @@ function buildApiErrorMessage(payload: ApiPayload, fallback: string) {
 
 function buildUiError(error: unknown) {
   if (error instanceof Error && error.message.includes("Failed to fetch")) {
-    return "Khong ket noi duoc server. Hay kiem tra server dev va thu lai.";
+    return "Không kết nối được server. Hãy kiểm tra server dev và thử lại.";
   }
-  return error instanceof Error ? error.message : "Loi he thong";
+  return error instanceof Error ? error.message : "Lỗi hệ thống";
 }
 
 export function ForgotPasswordForm() {
@@ -82,11 +82,11 @@ export function ForgotPasswordForm() {
       });
       const payload = await parseApiPayload(response);
       if (!response.ok || !payload.success) {
-        throw new Error(buildApiErrorMessage(payload, "Gui OTP that bai"));
+        throw new Error(buildApiErrorMessage(payload, "Gửi OTP thất bại"));
       }
       setOtpRequestId(payload.data?.otpRequestId ?? "");
       setCooldown(30);
-      toast.success("Da gui OTP reset mat khau");
+      toast.success("Đã gửi OTP đặt lại mật khẩu");
     } catch (err) {
       toast.error(buildUiError(err));
     } finally {
@@ -111,9 +111,9 @@ export function ForgotPasswordForm() {
       });
       const payload = await parseApiPayload(response);
       if (!response.ok || !payload.success) {
-        throw new Error(buildApiErrorMessage(payload, "Dat lai mat khau that bai"));
+        throw new Error(buildApiErrorMessage(payload, "Đặt lại mật khẩu thất bại"));
       }
-      toast.success("Dat lai mat khau thanh cong");
+      toast.success("Đặt lại mật khẩu thành công");
       router.push("/auth/dang-nhap");
       router.refresh();
     } catch (err) {
@@ -126,7 +126,7 @@ export function ForgotPasswordForm() {
   return (
     <form className="space-y-4" onSubmit={resetPassword}>
       <div>
-        <label className="mb-1 block text-sm font-medium">Email tai khoan</label>
+        <label className="mb-1 block text-sm font-medium">Email tài khoản</label>
         <input
           className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
           onChange={(event) => setEmail(event.target.value)}
@@ -145,26 +145,26 @@ export function ForgotPasswordForm() {
 
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <label className="text-sm font-medium">OTP reset</label>
+          <label className="text-sm font-medium">OTP đặt lại</label>
           <button
             className="rounded-lg border border-primary/40 px-3 py-1 text-xs font-semibold text-primary disabled:opacity-60"
             disabled={!canSend}
             onClick={() => void sendOtp()}
             type="button"
           >
-            {cooldown > 0 ? `Gui lai sau ${cooldown}s` : "Gui OTP"}
+            {cooldown > 0 ? `Gửi lại sau ${cooldown}s` : "Gửi OTP"}
           </button>
         </div>
         <input
           className="h-11 w-full rounded-xl border border-border bg-bg px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
           onChange={(event) => setOtpCode(event.target.value)}
-          pattern="\d{6,8}"
-          placeholder="Nhap OTP 6-8 so"
+          pattern="\\d{6,8}"
+          placeholder="Nhập OTP 6-8 số"
           required
           value={otpCode}
         />
         <p className="mt-1 text-xs text-fg/65">
-          OTP duoc gui boi Supabase Auth Email, toi da 2 lan trong 1 gio.
+          OTP được gửi qua Supabase Auth Email, tối đa 2 lần trong 1 giờ.
         </p>
       </div>
 
@@ -172,7 +172,7 @@ export function ForgotPasswordForm() {
         <input
           className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
           onChange={(event) => setNewPassword(event.target.value)}
-          placeholder="Mat khau moi"
+          placeholder="Mật khẩu mới"
           required
           type="password"
           value={newPassword}
@@ -180,7 +180,7 @@ export function ForgotPasswordForm() {
         <input
           className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
           onChange={(event) => setConfirmPassword(event.target.value)}
-          placeholder="Nhap lai mat khau moi"
+          placeholder="Nhập lại mật khẩu mới"
           required
           type="password"
           value={confirmPassword}
@@ -192,7 +192,7 @@ export function ForgotPasswordForm() {
         disabled={loadingReset || !otpRequestId}
         type="submit"
       >
-        {loadingReset ? "Dang xu ly..." : "Dat lai mat khau"}
+        {loadingReset ? "Đang xử lý..." : "Đặt lại mật khẩu"}
       </button>
     </form>
   );

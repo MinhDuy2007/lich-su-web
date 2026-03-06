@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { fail, ok } from "@/lib/api-response";
 import { requireRole } from "@/lib/auth";
 import { parseBody } from "@/lib/parse-body";
@@ -6,6 +6,14 @@ import { eventCrudSchema } from "@/lib/validation";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { syncEventRelations } from "@/lib/admin-events";
 import { slugify } from "@/lib/slug";
+import { extractImageUrlsFromHtml, sanitizeRichContentHtml } from "@/lib/rich-content";
+
+type AdminClient = ReturnType<typeof createSupabaseAdmin>;
+
+interface CustomSourceInput {
+  name: string;
+  url?: string | null;
+}
 
 async function resolveUniqueSlug(baseValue: string) {
   const admin = createSupabaseAdmin();
@@ -34,10 +42,73 @@ async function resolveUniqueSlug(baseValue: string) {
   return `${normalizedBase}-${Date.now()}`.slice(0, 160);
 }
 
+function normalizeSourceName(value: string) {
+  return value.trim().replace(/\s+/g, " ").slice(0, 255);
+}
+
+function normalizeSourceUrl(value: string | null | undefined) {
+  const nextValue = value?.trim() ?? "";
+  return nextValue.length > 0 ? nextValue : null;
+}
+
+async function resolveSourceIds(
+  admin: AdminClient,
+  sourceIds: string[],
+  customSources: CustomSourceInput[]
+) {
+  const mergedIds = new Set(sourceIds);
+
+  for (const source of customSources) {
+    const normalizedName = normalizeSourceName(source.name);
+    if (!normalizedName) {
+      continue;
+    }
+
+    const normalizedUrl = normalizeSourceUrl(source.url);
+    const existingResult = await admin
+      .from("sources")
+      .select("id,url")
+      .eq("name", normalizedName)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (existingResult.error) {
+      throw new Error(existingResult.error.message);
+    }
+
+    const existingRows = existingResult.data ?? [];
+    const matchedRow = existingRows.find((row) => (row.url ?? null) === normalizedUrl);
+    const fallbackRow = existingRows[0];
+    const targetRow = matchedRow ?? fallbackRow;
+
+    if (targetRow?.id) {
+      mergedIds.add(targetRow.id);
+      continue;
+    }
+
+    const insertResult = await admin
+      .from("sources")
+      .insert({
+        name: normalizedName,
+        url: normalizedUrl
+      })
+      .select("id")
+      .single();
+
+    if (insertResult.error || !insertResult.data?.id) {
+      throw new Error(insertResult.error?.message ?? "Không thêm được nguồn mới");
+    }
+
+    mergedIds.add(insertResult.data.id);
+  }
+
+  return Array.from(mergedIds);
+}
+
 export async function GET(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok) {
-    return fail("Khong du quyen truy cap", access.status);
+    return fail("Không đủ quyền truy cập", access.status);
   }
 
   const admin = createSupabaseAdmin();
@@ -48,7 +119,7 @@ export async function GET(request: NextRequest) {
     .limit(200);
 
   if (error) {
-    return fail("Khong tai duoc danh sach su kien", 500, error.message);
+    return fail("Không tải được danh sách sự kiện", 500, error.message);
   }
 
   return ok({ items: data ?? [] });
@@ -57,23 +128,46 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok || !access.userId) {
-    return fail("Khong du quyen", access.status);
+    return fail("Không đủ quyền", access.status);
   }
 
   const parsed = await parseBody(request, eventCrudSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Dữ liệu không hợp lệ", 400);
   }
 
   const admin = createSupabaseAdmin();
   const slug = await resolveUniqueSlug(parsed.data.slug || parsed.data.title);
+  const safeContent = sanitizeRichContentHtml(parsed.data.content);
+  if (!safeContent) {
+    return fail("Nội dung sự kiện không hợp lệ", 400);
+  }
+
+  const mergedImageUrls = Array.from(
+    new Set([...(parsed.data.imageUrls ?? []), ...extractImageUrlsFromHtml(safeContent)])
+  );
+  let mergedSourceIds: string[] = [];
+  try {
+    mergedSourceIds = await resolveSourceIds(
+      admin,
+      parsed.data.sourceIds ?? [],
+      parsed.data.customSources ?? []
+    );
+  } catch (error) {
+    return fail(
+      "Không xử lý được nguồn sự kiện",
+      500,
+      error instanceof Error ? error.message : "Lỗi hệ thống"
+    );
+  }
+
   const { data, error } = await admin
     .from("events")
     .insert({
       slug,
       title: parsed.data.title,
       summary: parsed.data.summary,
-      content: parsed.data.content,
+      content: safeContent,
       start_date: parsed.data.startDate ?? null,
       end_date: parsed.data.endDate ?? null,
       event_type: parsed.data.eventType ?? null,
@@ -88,9 +182,9 @@ export async function POST(request: NextRequest) {
 
   if (error || !data) {
     if (error?.code === "23505") {
-      return fail("Slug da ton tai. Hay doi tieu de hoac thu lai", 409, error.message);
+      return fail("Đường dẫn đã tồn tại. Hãy đổi tiêu đề hoặc thử lại", 409, error.message);
     }
-    return fail("Tao su kien that bai", 500, error?.message);
+    return fail("Tạo sự kiện thất bại", 500, error?.message);
   }
 
   await syncEventRelations({
@@ -98,8 +192,8 @@ export async function POST(request: NextRequest) {
     tags: parsed.data.tags ?? [],
     people: parsed.data.people ?? [],
     places: parsed.data.places ?? [],
-    sourceIds: parsed.data.sourceIds ?? [],
-    imageUrls: parsed.data.imageUrls ?? []
+    sourceIds: mergedSourceIds,
+    imageUrls: mergedImageUrls
   });
 
   return ok({ eventId: data.id }, 201);

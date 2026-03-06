@@ -15,12 +15,12 @@ export async function POST(request: NextRequest) {
     windowMs: 60_000
   });
   if (!limiter.allowed) {
-    return fail("Qua nhieu yeu cau", 429);
+    return fail("Quá nhiều yêu cầu", 429);
   }
 
   const parsed = await parseBody(request, resetPasswordSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const otpCheck = await verifyOtpSession({
@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
   const admin = createSupabaseAdmin();
   const otpUser = otpCheck.user ?? (await findAuthUserByEmail(parsed.data.email));
   if (!otpUser) {
-    return fail("Tai khoan khong ton tai", 404);
+    return fail("Tài khoản không tồn tại", 404);
   }
 
   const updateResult = await admin.auth.admin.updateUserById(otpUser.id, {
     password: parsed.data.newPassword
   });
   if (updateResult.error) {
-    return fail("Dat lai mat khau that bai", 500, updateResult.error.message);
+    return fail("Đặt lại mật khẩu thất bại", 500, updateResult.error.message);
   }
 
   return ok({ updated: true });

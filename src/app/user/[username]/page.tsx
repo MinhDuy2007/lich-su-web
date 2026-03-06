@@ -146,7 +146,7 @@ export default async function PublicUserProfilePage({
             <div className="rounded-xl border border-border bg-card p-3">
               <p className="text-xs text-fg/65">Trang thai contributor</p>
               <p className="mt-1 text-sm font-semibold text-fg">
-                {approvedCount > 0 ? "Dang dong gop" : "Moi tham gia"}
+                {approvedCount > 0 ? "Đang đóng góp" : "Mời tham gia"}
               </p>
             </div>
           </div>

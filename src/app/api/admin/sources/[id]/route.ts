@@ -10,14 +10,14 @@ interface Params {
 export async function DELETE(request: NextRequest, context: Params) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok) {
-    return fail("Khong du quyen", access.status);
+    return fail("Không đủ quyền", access.status);
   }
 
   const { id } = await context.params;
   const admin = createSupabaseAdmin();
   const { error } = await admin.from("sources").delete().eq("id", id);
   if (error) {
-    return fail("Xoa nguon that bai", 500, error.message);
+    return fail("Xóa nguồn thất bại", 500, error.message);
   }
   return ok({ deleted: true });
 }

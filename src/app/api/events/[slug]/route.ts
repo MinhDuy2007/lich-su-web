@@ -11,7 +11,7 @@ export async function GET(_: NextRequest, context: Params) {
   const { slug } = await context.params;
   const event = await getEventBySlug(slug);
   if (!event) {
-    return fail("Khong tim thay su kien", 404);
+    return fail("Không tìm thấy sự kiện", 404);
   }
 
   const admin = createSupabaseAdmin();

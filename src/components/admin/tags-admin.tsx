@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -15,10 +15,10 @@ export function TagsAdmin() {
   const [tags, setTags] = useState<TagItem[]>([]);
 
   async function loadTags() {
-    const response = await fetch("/api/admin/tags");
+    const response = await fetch("/api/admin/tags", { cache: "no-store" });
     const payload = await response.json();
     if (response.ok && payload.success) {
-      setTags(payload.data.items);
+      setTags(payload.data.items ?? []);
     }
   }
 
@@ -28,6 +28,7 @@ export function TagsAdmin() {
 
   async function createTag(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     const response = await fetch("/api/admin/tags", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -35,56 +36,67 @@ export function TagsAdmin() {
     });
     const payload = await response.json();
     if (!response.ok || !payload.success) {
-      toast.error(payload.message ?? "Tao tag that bai");
+      toast.error(payload.message ?? "Tạo thẻ thất bại");
       return;
     }
-    toast.success("Da tao tag");
+
+    toast.success("Đã tạo thẻ");
     setName("");
     setSlug("");
     await loadTags();
   }
 
   async function removeTag(id: string) {
+    const accepted = window.confirm("Bạn có chắc muốn xóa thẻ này?");
+    if (!accepted) return;
+
     const response = await fetch(`/api/admin/tags/${id}`, { method: "DELETE" });
     const payload = await response.json();
     if (!response.ok || !payload.success) {
-      toast.error(payload.message ?? "Xoa tag that bai");
+      toast.error(payload.message ?? "Xóa thẻ thất bại");
       return;
     }
-    toast.success("Da xoa tag");
+
+    toast.success("Đã xóa thẻ");
     await loadTags();
   }
 
   return (
     <div className="space-y-5">
       <form className="card-glass rounded-2xl p-5" onSubmit={createTag}>
-        <h2 className="mb-3 text-lg font-semibold">Them tag</h2>
+        <h2 className="mb-3 text-lg font-semibold">Thêm thẻ</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <input
             className="h-10 rounded-xl border border-border bg-card px-3 text-sm"
             onChange={(event) => setName(event.target.value)}
-            placeholder="Ten tag"
+            placeholder="Tên thẻ"
             required
             value={name}
           />
           <input
             className="h-10 rounded-xl border border-border bg-card px-3 text-sm"
             onChange={(event) => setSlug(event.target.value)}
-            placeholder="Slug"
+            placeholder="Đường dẫn thẻ"
             required
             value={slug}
           />
         </div>
-        <button className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-fg" type="submit">
-          Tao tag
+        <button
+          className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-fg"
+          type="submit"
+        >
+          Lưu thẻ
         </button>
       </form>
 
       <section className="card-glass rounded-2xl p-5">
-        <h2 className="mb-3 text-lg font-semibold">Danh sach tag</h2>
+        <h2 className="mb-3 text-lg font-semibold">Danh sách thẻ</h2>
         <ul className="space-y-2">
           {tags.map((tag) => (
-            <li className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2" key={tag.id}>
+            <li
+              className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2"
+              key={tag.id}
+            >
               <p className="text-sm">
                 {tag.name} <span className="text-fg/60">({tag.slug})</span>
               </p>
@@ -93,13 +105,13 @@ export function TagsAdmin() {
                 onClick={() => void removeTag(tag.id)}
                 type="button"
               >
-                Xoa
+                Xóa
               </button>
             </li>
           ))}
+          {tags.length === 0 ? <li className="text-sm text-fg/65">Chưa có thẻ nào.</li> : null}
         </ul>
       </section>
     </div>
   );
 }
-

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!limiter.allowed) {
-    return fail("Qua nhieu yeu cau captcha", 429);
+    return fail("Quá nhiều yêu cầu captcha", 429);
   }
 
   const admin = createSupabaseAdmin();
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (error || !data) {
-    return fail("Khong tao duoc captcha", 500, error?.message);
+    return fail("Không tạo được captcha", 500, error?.message);
   }
 
   return ok({

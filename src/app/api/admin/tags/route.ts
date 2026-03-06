@@ -8,7 +8,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 export async function GET(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok) {
-    return fail("Khong du quyen", access.status);
+    return fail("Không đủ quyền", access.status);
   }
 
   const admin = createSupabaseAdmin();
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     .select("id,name,slug")
     .order("name", { ascending: true });
   if (error) {
-    return fail("Khong tai duoc tag", 500, error.message);
+    return fail("Không tải được thẻ", 500, error.message);
   }
 
   return ok({ items: data ?? [] });
@@ -26,12 +26,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok) {
-    return fail("Khong du quyen", access.status);
+    return fail("Không đủ quyền", access.status);
   }
 
   const parsed = await parseBody(request, tagSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khong hop le", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const admin = createSupabaseAdmin();
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error || !data) {
-    return fail("Tao tag that bai", 500, error?.message);
+    return fail("Tạo thẻ thất bại", 500, error?.message);
   }
 
   return ok({ id: data.id }, 201);

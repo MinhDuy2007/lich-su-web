@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -15,10 +15,10 @@ export function SourcesAdmin() {
   const [sources, setSources] = useState<SourceItem[]>([]);
 
   async function loadSources() {
-    const response = await fetch("/api/admin/sources");
+    const response = await fetch("/api/admin/sources", { cache: "no-store" });
     const payload = await response.json();
     if (response.ok && payload.success) {
-      setSources(payload.data.items);
+      setSources(payload.data.items ?? []);
     }
   }
 
@@ -28,6 +28,7 @@ export function SourcesAdmin() {
 
   async function createSource(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     const response = await fetch("/api/admin/sources", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -38,35 +39,40 @@ export function SourcesAdmin() {
     });
     const payload = await response.json();
     if (!response.ok || !payload.success) {
-      toast.error(payload.message ?? "Tao nguon that bai");
+      toast.error(payload.message ?? "Tạo nguồn thất bại");
       return;
     }
-    toast.success("Da tao nguon");
+
+    toast.success("Đã tạo nguồn");
     setName("");
     setUrl("");
     await loadSources();
   }
 
   async function removeSource(id: string) {
+    const accepted = window.confirm("Bạn có chắc muốn xóa nguồn này?");
+    if (!accepted) return;
+
     const response = await fetch(`/api/admin/sources/${id}`, { method: "DELETE" });
     const payload = await response.json();
     if (!response.ok || !payload.success) {
-      toast.error(payload.message ?? "Xoa nguon that bai");
+      toast.error(payload.message ?? "Xóa nguồn thất bại");
       return;
     }
-    toast.success("Da xoa nguon");
+
+    toast.success("Đã xóa nguồn");
     await loadSources();
   }
 
   return (
     <div className="space-y-5">
       <form className="card-glass rounded-2xl p-5" onSubmit={createSource}>
-        <h2 className="mb-3 text-lg font-semibold">Them nguon</h2>
+        <h2 className="mb-3 text-lg font-semibold">Thêm nguồn</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <input
             className="h-10 rounded-xl border border-border bg-card px-3 text-sm"
             onChange={(event) => setName(event.target.value)}
-            placeholder="Ten nguon"
+            placeholder="Tên nguồn"
             required
             value={name}
           />
@@ -78,13 +84,16 @@ export function SourcesAdmin() {
             value={url}
           />
         </div>
-        <button className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-fg" type="submit">
-          Tao nguon
+        <button
+          className="mt-3 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-fg"
+          type="submit"
+        >
+          Lưu nguồn
         </button>
       </form>
 
       <section className="card-glass rounded-2xl p-5">
-        <h2 className="mb-3 text-lg font-semibold">Danh sach nguon</h2>
+        <h2 className="mb-3 text-lg font-semibold">Danh sách nguồn</h2>
         <ul className="space-y-2">
           {sources.map((source) => (
             <li className="rounded-xl border border-border bg-card px-3 py-2" key={source.id}>
@@ -92,11 +101,16 @@ export function SourcesAdmin() {
                 <div>
                   <p className="text-sm font-medium">{source.name}</p>
                   {source.url ? (
-                    <a className="text-xs text-primary underline" href={source.url}>
+                    <a
+                      className="text-xs text-primary underline"
+                      href={source.url}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
                       {source.url}
                     </a>
                   ) : (
-                    <p className="text-xs text-fg/60">Khong co URL</p>
+                    <p className="text-xs text-fg/60">Chưa có liên kết</p>
                   )}
                 </div>
                 <button
@@ -104,14 +118,16 @@ export function SourcesAdmin() {
                   onClick={() => void removeSource(source.id)}
                   type="button"
                 >
-                  Xoa
+                  Xóa
                 </button>
               </div>
             </li>
           ))}
+          {sources.length === 0 ? (
+            <li className="text-sm text-fg/65">Chưa có nguồn nào.</li>
+          ) : null}
         </ul>
       </section>
     </div>
   );
 }
-

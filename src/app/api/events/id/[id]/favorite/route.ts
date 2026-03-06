@@ -91,7 +91,7 @@ async function removeBookmark(admin: ReturnType<typeof createSupabaseAdmin>, use
 
 export async function GET(request: NextRequest, context: Params) {
   const { user } = await getAuthUserFromRequest(request);
-  if (!user) return fail("Can dang nhap", 401);
+  if (!user) return fail("Cần đăng nhập", 401);
 
   const { id } = await context.params;
   const admin = createSupabaseAdmin();
@@ -100,16 +100,16 @@ export async function GET(request: NextRequest, context: Params) {
     return ok({ isBookmarked: value });
   } catch (error) {
     return fail(
-      "Khong kiem tra duoc bookmark",
+      "Không kiểm tra được bookmark",
       500,
-      error instanceof Error ? error.message : "Loi he thong"
+      error instanceof Error ? error.message : "Lỗi hệ thống"
     );
   }
 }
 
 export async function POST(request: NextRequest, context: Params) {
   const { user } = await getAuthUserFromRequest(request);
-  if (!user) return fail("Can dang nhap", 401);
+  if (!user) return fail("Cần đăng nhập", 401);
 
   const { id } = await context.params;
   const admin = createSupabaseAdmin();
@@ -118,16 +118,16 @@ export async function POST(request: NextRequest, context: Params) {
     return ok({ isBookmarked: true });
   } catch (error) {
     return fail(
-      "Khong the them bookmark",
+      "Không thể thêm bookmark",
       500,
-      error instanceof Error ? error.message : "Loi he thong"
+      error instanceof Error ? error.message : "Lỗi hệ thống"
     );
   }
 }
 
 export async function DELETE(request: NextRequest, context: Params) {
   const { user } = await getAuthUserFromRequest(request);
-  if (!user) return fail("Can dang nhap", 401);
+  if (!user) return fail("Cần đăng nhập", 401);
 
   const { id } = await context.params;
   const admin = createSupabaseAdmin();
@@ -136,9 +136,9 @@ export async function DELETE(request: NextRequest, context: Params) {
     return ok({ isBookmarked: false });
   } catch (error) {
     return fail(
-      "Khong the bo bookmark",
+      "Không thể bỏ bookmark",
       500,
-      error instanceof Error ? error.message : "Loi he thong"
+      error instanceof Error ? error.message : "Lỗi hệ thống"
     );
   }
 }

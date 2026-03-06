@@ -24,7 +24,7 @@ export async function callGeminiGenerate({ prompt }: GeminiGeneratePayload) {
       })
     });
   } catch {
-    throw new Error("Khong ket noi duoc den Google AI");
+    throw new Error("Không kết nối được đến Google AI");
   }
 
   if (!response.ok) {
