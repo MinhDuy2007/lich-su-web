@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     .eq("purpose", "forgot_password")
     .gte("created_at", hourAgo);
   if ((hourlyCountResult.count ?? 0) >= 2) {
-    return fail("Đã vượt quá giới hạn 2 lần gửi OTP trong 1 giờ", 429);
+    return fail("Vượt quá giới hạn, vui lòng thử lại sau 1 giờ", 429);
   }
 
   const sendResult = await sendSupabaseAuthOtp({

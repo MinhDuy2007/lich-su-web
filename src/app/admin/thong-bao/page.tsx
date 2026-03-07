@@ -5,12 +5,13 @@ import { requireAdminOrModerator } from "@/lib/access";
 export const dynamic = "force-dynamic";
 
 export default async function AdminNotificationsPage() {
-  await requireAdminOrModerator();
+  const access = await requireAdminOrModerator();
+  const role = access.role === "admin" ? "admin" : "moderator";
 
   return (
     <AdminShell pathname="/admin/thong-bao">
       <h1 className="text-3xl font-bold">Thông báo và báo cáo</h1>
-      <NotificationsAdmin />
+      <NotificationsAdmin role={role} />
     </AdminShell>
   );
 }

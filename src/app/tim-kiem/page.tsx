@@ -1,7 +1,7 @@
 import { EventCard } from "@/components/events/event-card";
 import { SearchForm } from "@/components/events/search-form";
 import { SiteShell } from "@/components/layout/site-shell";
-import { searchEvents } from "@/lib/events";
+import { getSearchTags, searchEvents } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -19,15 +19,20 @@ function readParam(
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
   const query = readParam(params.query);
-  const eventType = readParam(params.eventType);
+  const eventType = readParam(params.eventType); // legacy query support
+  const tag = readParam(params.tag);
   const page = Number(readParam(params.page) ?? "1");
 
-  const result = await searchEvents({
-    query,
-    eventType,
-    page: Number.isFinite(page) && page > 0 ? page : 1,
-    pageSize: 12
-  });
+  const [result, tags] = await Promise.all([
+    searchEvents({
+      query,
+      eventType,
+      tag,
+      page: Number.isFinite(page) && page > 0 ? page : 1,
+      pageSize: 12
+    }),
+    getSearchTags()
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
 
@@ -35,16 +40,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <SiteShell>
       <section className="space-y-5">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Tim kiem su kien</h1>
+          <h1 className="text-3xl font-bold">Tìm kiếm sự kiện</h1>
           <p className="text-sm text-fg/70">
-            Tim thay {result.total} su kien phu hop bo loc cua ban
+            Tìm được {result.total} sự kiện phù hợp
           </p>
         </div>
-        <SearchForm />
+        <SearchForm tags={tags} />
 
         {result.items.length === 0 ? (
           <div className="card-glass rounded-2xl p-8 text-center text-sm text-fg/75">
-            Khong tim thay su kien nao. Hay thay doi tu khoa hoac bo loc.
+            Không tìm thấy sự kiện nào, vui lòng đổi từ khoá
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -59,6 +64,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             (pageNum) => {
               const nextParams = new URLSearchParams();
               if (query) nextParams.set("query", query);
+              if (tag) nextParams.set("tag", tag);
               if (eventType) nextParams.set("eventType", eventType);
               nextParams.set("page", String(pageNum));
 

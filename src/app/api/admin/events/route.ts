@@ -7,13 +7,10 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { syncEventRelations } from "@/lib/admin-events";
 import { slugify } from "@/lib/slug";
 import { extractImageUrlsFromHtml, sanitizeRichContentHtml } from "@/lib/rich-content";
-
-type AdminClient = ReturnType<typeof createSupabaseAdmin>;
-
-interface CustomSourceInput {
-  name: string;
-  url?: string | null;
-}
+import { resolveSourceIds } from "@/lib/event-sources";
+import { buildEventDateColumns, getDefaultEventStatusForRole } from "@/lib/event-persistence";
+import { isMissingColumnError } from "@/lib/db-compat";
+import { loadLatestRoleByUserIds } from "@/lib/user-ip-log";
 
 async function resolveUniqueSlug(baseValue: string) {
   const admin = createSupabaseAdmin();
@@ -42,69 +39,6 @@ async function resolveUniqueSlug(baseValue: string) {
   return `${normalizedBase}-${Date.now()}`.slice(0, 160);
 }
 
-function normalizeSourceName(value: string) {
-  return value.trim().replace(/\s+/g, " ").slice(0, 255);
-}
-
-function normalizeSourceUrl(value: string | null | undefined) {
-  const nextValue = value?.trim() ?? "";
-  return nextValue.length > 0 ? nextValue : null;
-}
-
-async function resolveSourceIds(
-  admin: AdminClient,
-  sourceIds: string[],
-  customSources: CustomSourceInput[]
-) {
-  const mergedIds = new Set(sourceIds);
-
-  for (const source of customSources) {
-    const normalizedName = normalizeSourceName(source.name);
-    if (!normalizedName) {
-      continue;
-    }
-
-    const normalizedUrl = normalizeSourceUrl(source.url);
-    const existingResult = await admin
-      .from("sources")
-      .select("id,url")
-      .eq("name", normalizedName)
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    if (existingResult.error) {
-      throw new Error(existingResult.error.message);
-    }
-
-    const existingRows = existingResult.data ?? [];
-    const matchedRow = existingRows.find((row) => (row.url ?? null) === normalizedUrl);
-    const fallbackRow = existingRows[0];
-    const targetRow = matchedRow ?? fallbackRow;
-
-    if (targetRow?.id) {
-      mergedIds.add(targetRow.id);
-      continue;
-    }
-
-    const insertResult = await admin
-      .from("sources")
-      .insert({
-        name: normalizedName,
-        url: normalizedUrl
-      })
-      .select("id")
-      .single();
-
-    if (insertResult.error || !insertResult.data?.id) {
-      throw new Error(insertResult.error?.message ?? "Không thêm được nguồn mới");
-    }
-
-    mergedIds.add(insertResult.data.id);
-  }
-
-  return Array.from(mergedIds);
-}
-
 export async function GET(request: NextRequest) {
   const access = await requireRole(request, ["admin", "moderator"]);
   if (!access.ok) {
@@ -114,7 +48,7 @@ export async function GET(request: NextRequest) {
   const admin = createSupabaseAdmin();
   const { data, error } = await admin
     .from("events")
-    .select("id, slug, title, status, event_type, updated_at")
+    .select("id, slug, title, status, event_type, updated_at, created_by")
     .order("updated_at", { ascending: false })
     .limit(200);
 
@@ -122,7 +56,130 @@ export async function GET(request: NextRequest) {
     return fail("Không tải được danh sách sự kiện", 500, error.message);
   }
 
-  return ok({ items: data ?? [] });
+  const items = data ?? [];
+  const eventIds = items.map((item) => item.id).filter((value): value is string => Boolean(value));
+
+  const contributorByEvent = new Map<
+    string,
+    {
+      displayName: string | null;
+      username: string | null;
+      role: "user" | "moderator" | "admin" | null;
+    }
+  >();
+
+  if (eventIds.length > 0) {
+    const contributorUserByEvent = new Map<string, string>();
+
+    const submissionsResult = await admin
+      .from("event_submissions")
+      .select("approved_event_id,submitted_by,created_at")
+      .in("approved_event_id", eventIds)
+      .order("created_at", { ascending: false });
+
+    if (!submissionsResult.error) {
+      (submissionsResult.data ?? []).forEach((row) => {
+        if (!row.approved_event_id || !row.submitted_by) {
+          return;
+        }
+        if (!contributorUserByEvent.has(row.approved_event_id)) {
+          contributorUserByEvent.set(row.approved_event_id, row.submitted_by);
+        }
+      });
+    }
+
+    for (const eventItem of items) {
+      if (!eventItem.id || !eventItem.created_by) {
+        continue;
+      }
+      if (!contributorUserByEvent.has(eventItem.id)) {
+        contributorUserByEvent.set(eventItem.id, eventItem.created_by);
+      }
+    }
+
+    const contributorUserIds = Array.from(new Set(Array.from(contributorUserByEvent.values())));
+    if (contributorUserIds.length > 0) {
+      const [profileResult, roleResult] = await Promise.all([
+        admin
+          .from("profiles")
+          .select("user_id,display_name,username")
+          .in("user_id", contributorUserIds),
+        loadLatestRoleByUserIds(contributorUserIds).catch(
+          () => new Map<string, "user" | "moderator" | "admin">()
+        )
+      ]);
+
+      const profileMap = new Map<string, { displayName: string; username: string | null }>();
+      if (!profileResult.error) {
+        (profileResult.data ?? []).forEach((profile) => {
+          profileMap.set(profile.user_id, {
+            displayName: profile.display_name || profile.username || "Người dùng",
+            username: profile.username ?? null
+          });
+        });
+      }
+
+      contributorUserByEvent.forEach((userId, eventId) => {
+        const profile = profileMap.get(userId);
+        contributorByEvent.set(eventId, {
+          displayName: profile?.displayName ?? "Người dùng",
+          username: profile?.username ?? null,
+          role: roleResult.get(userId) ?? null
+        });
+      });
+    }
+  }
+
+  return ok({
+    items: items.map((item) => {
+      const contributor = contributorByEvent.get(item.id);
+      return {
+        ...item,
+        contributor_display_name: contributor?.displayName ?? null,
+        contributor_username: contributor?.username ?? null,
+        contributor_role: contributor?.role ?? null
+      };
+    })
+  });
+}
+
+function isMissingFlexibleDateColumnsError(
+  error: {
+    code?: string | null;
+    message?: string | null;
+    details?: string | null;
+  } | null
+) {
+  return isMissingColumnError(error, [
+    "start_year",
+    "start_month",
+    "start_day",
+    "start_precision",
+    "end_year",
+    "end_month",
+    "end_day",
+    "end_precision"
+  ]);
+}
+
+function isPendingStatusNotSupportedError(
+  error: {
+    code?: string | null;
+    message?: string | null;
+    details?: string | null;
+  } | null,
+  status: string
+) {
+  if (status !== "pending" || !error) {
+    return false;
+  }
+
+  if (error.code !== "22P02") {
+    return false;
+  }
+
+  const message = `${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
+  return message.includes("event_status") && message.includes("pending");
 }
 
 export async function POST(request: NextRequest) {
@@ -135,23 +192,24 @@ export async function POST(request: NextRequest) {
   if (!parsed.data) {
     return fail(parsed.error ?? "Dữ liệu không hợp lệ", 400);
   }
+  const payload = parsed.data;
 
   const admin = createSupabaseAdmin();
-  const slug = await resolveUniqueSlug(parsed.data.slug || parsed.data.title);
-  const safeContent = sanitizeRichContentHtml(parsed.data.content);
+  const slug = await resolveUniqueSlug(payload.slug || payload.title);
+  const safeContent = sanitizeRichContentHtml(payload.content);
   if (!safeContent) {
     return fail("Nội dung sự kiện không hợp lệ", 400);
   }
 
   const mergedImageUrls = Array.from(
-    new Set([...(parsed.data.imageUrls ?? []), ...extractImageUrlsFromHtml(safeContent)])
+    new Set([...(payload.imageUrls ?? []), ...extractImageUrlsFromHtml(safeContent)])
   );
   let mergedSourceIds: string[] = [];
   try {
     mergedSourceIds = await resolveSourceIds(
       admin,
-      parsed.data.sourceIds ?? [],
-      parsed.data.customSources ?? []
+      payload.sourceIds ?? [],
+      payload.customSources ?? []
     );
   } catch (error) {
     return fail(
@@ -161,24 +219,58 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data, error } = await admin
-    .from("events")
-    .insert({
-      slug,
-      title: parsed.data.title,
-      summary: parsed.data.summary,
-      content: safeContent,
-      start_date: parsed.data.startDate ?? null,
-      end_date: parsed.data.endDate ?? null,
-      event_type: parsed.data.eventType ?? null,
-      location_text: parsed.data.locationText ?? null,
-      country: parsed.data.country ?? null,
-      status: parsed.data.status,
-      created_by: access.userId,
-      updated_by: access.userId
-    })
-    .select("id")
-    .single();
+  const dateColumns = buildEventDateColumns(payload);
+  const defaultStatus = getDefaultEventStatusForRole(access.role);
+
+  async function insertEvent(preferredStatus: "draft" | "pending" | "published" | "rejected") {
+    let nextResult = await admin
+      .from("events")
+      .insert({
+        slug,
+        title: payload.title,
+        summary: payload.summary,
+        content: safeContent,
+        ...dateColumns,
+        event_type: payload.eventType ?? null,
+        location_text: payload.locationText ?? null,
+        country: payload.country ?? null,
+        status: preferredStatus,
+        created_by: access.userId,
+        updated_by: access.userId
+      })
+      .select("id")
+      .single();
+
+    if (isMissingFlexibleDateColumnsError(nextResult.error)) {
+      nextResult = await admin
+        .from("events")
+        .insert({
+          slug,
+          title: payload.title,
+          summary: payload.summary,
+          content: safeContent,
+          start_date: dateColumns.start_date,
+          end_date: dateColumns.end_date,
+          event_type: payload.eventType ?? null,
+          location_text: payload.locationText ?? null,
+          country: payload.country ?? null,
+          status: preferredStatus,
+          created_by: access.userId,
+          updated_by: access.userId
+        })
+        .select("id")
+        .single();
+    }
+
+    return nextResult;
+  }
+
+  let insertResult = await insertEvent(defaultStatus);
+  if (isPendingStatusNotSupportedError(insertResult.error, defaultStatus)) {
+    insertResult = await insertEvent("draft");
+  }
+
+  const { data, error } = insertResult;
 
   if (error || !data) {
     if (error?.code === "23505") {
@@ -189,9 +281,9 @@ export async function POST(request: NextRequest) {
 
   await syncEventRelations({
     eventId: data.id,
-    tags: parsed.data.tags ?? [],
-    people: parsed.data.people ?? [],
-    places: parsed.data.places ?? [],
+    tags: payload.tags ?? [],
+    people: payload.people ?? [],
+    places: payload.places ?? [],
     sourceIds: mergedSourceIds,
     imageUrls: mergedImageUrls
   });

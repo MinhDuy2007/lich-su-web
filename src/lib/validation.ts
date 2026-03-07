@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validateFlexibleDate, validateFlexibleDateRange } from "@/lib/flexible-date";
 
 export const usernameSchema = z
   .string()
@@ -80,6 +81,24 @@ export const aiAskSchema = z.object({
   question: z.string().trim().min(3).max(1000)
 });
 
+const optionalPartialNumber = z.preprocess((value) => {
+  if (value === null || typeof value === "undefined") {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const parsed = Number.parseInt(trimmed, 10);
+    return Number.isInteger(parsed) ? parsed : value;
+  }
+
+  return value;
+}, z.number().int().nullable().optional());
+
 export const eventCrudSchema = z.object({
   slug: z.string().trim().max(160).nullable().optional(),
   title: z.string().trim().min(3).max(255),
@@ -87,10 +106,16 @@ export const eventCrudSchema = z.object({
   content: z.string().trim().min(10),
   startDate: z.string().nullable().optional(),
   endDate: z.string().nullable().optional(),
+  startYear: optionalPartialNumber,
+  startMonth: optionalPartialNumber,
+  startDay: optionalPartialNumber,
+  endYear: optionalPartialNumber,
+  endMonth: optionalPartialNumber,
+  endDay: optionalPartialNumber,
   eventType: z.string().nullable().optional(),
   locationText: z.string().nullable().optional(),
   country: z.string().nullable().optional(),
-  status: z.enum(["draft", "pending", "published", "rejected"]),
+  status: z.enum(["draft", "pending", "published", "rejected"]).optional(),
   tags: z.array(z.string()).default([]),
   people: z.array(z.string()).default([]),
   places: z.array(z.string()).default([]),
@@ -104,6 +129,46 @@ export const eventCrudSchema = z.object({
     )
     .default([]),
   imageUrls: z.array(z.string().url()).default([])
+}).superRefine((value, ctx) => {
+  const startErrors = validateFlexibleDate(
+    {
+      year: value.startYear,
+      month: value.startMonth,
+      day: value.startDay
+    },
+    {
+      label: "Mốc bắt đầu"
+    }
+  );
+  const endErrors = validateFlexibleDate(
+    {
+      year: value.endYear,
+      month: value.endMonth,
+      day: value.endDay
+    },
+    {
+      label: "Mốc kết thúc"
+    }
+  );
+  const rangeErrors = validateFlexibleDateRange(
+    {
+      year: value.startYear,
+      month: value.startMonth,
+      day: value.startDay
+    },
+    {
+      year: value.endYear,
+      month: value.endMonth,
+      day: value.endDay
+    }
+  );
+
+  [...startErrors, ...endErrors, ...rangeErrors].forEach((message) => {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message
+    });
+  });
 });
 
 export const moderationActionSchema = z.object({
@@ -152,7 +217,8 @@ export const eventReportCreateSchema = z.object({
 export const reportReviewSchema = z.object({
   reportId: z.string().uuid(),
   status: z.enum(["reviewing", "resolved", "rejected"]),
-  response: z.string().trim().min(3).max(1000)
+  response: z.string().trim().min(3).max(1000),
+  changesApplied: z.string().trim().max(1000).optional()
 });
 
 export const notificationsMarkReadSchema = z
@@ -168,6 +234,20 @@ export const adminBroadcastSchema = z.object({
   title: z.string().trim().min(3).max(160),
   body: z.string().trim().min(3).max(1000),
   link: z.string().trim().max(300).optional()
+});
+
+export const supportRequestSchema = z.object({
+  email: z.string().trim().email(),
+  fullName: z.string().trim().min(2).max(120),
+  phone: z
+    .string()
+    .trim()
+    .min(8)
+    .max(30)
+    .regex(/^[0-9+\s().-]+$/, "Số điện thoại không hợp lệ")
+    .optional()
+    .or(z.literal("")),
+  message: z.string().trim().min(10).max(3000)
 });
 
 export const profileUpdateSchema = z.object({

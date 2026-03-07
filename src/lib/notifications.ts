@@ -5,7 +5,8 @@ export type AppNotificationType =
   | "submission_reviewed"
   | "report_response"
   | "event_updated"
-  | "admin_broadcast";
+  | "admin_broadcast"
+  | "support_request";
 
 interface NotificationPayload {
   type: AppNotificationType;

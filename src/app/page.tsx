@@ -3,14 +3,15 @@ import { LogIn, ShieldCheck, Sparkles, UserCircle2 } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
 import { SearchForm } from "@/components/events/search-form";
 import { SiteShell } from "@/components/layout/site-shell";
-import { searchEvents } from "@/lib/events";
+import { getSearchTags, searchEvents } from "@/lib/events";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [result, supabase] = await Promise.all([
+  const [result, tags, supabase] = await Promise.all([
     searchEvents({ page: 1, pageSize: 6 }),
+    getSearchTags(),
     createSupabaseServerClient()
   ]);
   const {
@@ -35,7 +36,7 @@ export default async function HomePage() {
             Tìm theo từ khóa, xem mốc thời gian, lưu lại nội dung quan tâm và
             nhận tóm tắt nhanh khi cần.
           </p>
-          <SearchForm />
+          <SearchForm tags={tags} />
           <div className="flex flex-wrap gap-3 text-xs">
             {!user ? (
               <>

@@ -81,14 +81,17 @@ export async function POST(request: NextRequest) {
 
     const styleInstruction =
       parsed.data.style === "bullets"
-        ? "Trình bày dạng gạch đầu dòng."
-        : "Trình bày dạng đoạn văn mạch lạc.";
+        ? "Trình bày bằng Markdown dạng gạch đầu dòng ngắn, rõ ý."
+        : "Trình bày bằng Markdown, chia thành 2-3 đoạn ngắn có tiêu đề phụ khi cần.";
+
     const outputLength = parsed.data.length ?? "short";
     const safeContent = trimForModel(event.content);
     const prompt = [
-      "Bạn là trợ lý lịch sử. Hãy tóm tắt sự kiện bên dưới.",
+      "Bạn là trợ lý lịch sử. Hãy tóm tắt sự kiện dưới đây bằng tiếng Việt có dấu.",
       `Độ dài mong muốn: ${lengthMap[outputLength]}.`,
       styleInstruction,
+      "Ưu tiên nêu bối cảnh, diễn biến chính, tác động và điểm cần nhớ.",
+      "Không thêm lời mở đầu chung chung.",
       "Nội dung:",
       `Tiêu đề: ${event.title}`,
       `Mô tả ngắn: ${event.summary}`,

@@ -3,6 +3,7 @@
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { CornerDownRight, Heart, MessageCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useConfirmPopup } from "@/components/ui/confirm-popup";
 import { cn } from "@/lib/cn";
 
 interface CommentAuthor {
@@ -63,6 +64,7 @@ export function EventComments({ eventId }: EventCommentsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [likingIds, setLikingIds] = useState<string[]>([]);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const { confirm, confirmPopup } = useConfirmPopup();
 
   const totalLabel = useMemo(() => {
     if (items.length === 0) return "Chưa có bình luận";
@@ -197,7 +199,12 @@ export function EventComments({ eventId }: EventCommentsProps) {
 
   async function deleteComment(commentId: string) {
     if (deletingIds.includes(commentId)) return;
-    const accepted = window.confirm("Bạn có chắc muốn xóa bình luận này?");
+    const accepted = await confirm({
+      title: "Xóa bình luận",
+      message: "Bạn có chắc muốn xóa bình luận này?",
+      confirmLabel: "Xóa",
+      destructive: true
+    });
     if (!accepted) return;
 
     setDeletingIds((prev) => [...prev, commentId]);
@@ -349,6 +356,7 @@ export function EventComments({ eventId }: EventCommentsProps) {
 
   return (
     <section className="card-glass rounded-2xl p-5">
+      {confirmPopup}
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="inline-flex items-center gap-2 text-lg font-semibold">
           <MessageCircle className="h-5 w-5 text-primary" />

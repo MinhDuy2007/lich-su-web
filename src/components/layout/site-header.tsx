@@ -71,7 +71,7 @@ export function SiteHeader({ isAuthenticated, showAdmin }: SiteHeaderProps) {
             <History className="h-4 w-4" />
           </span>
           <span className="text-sm font-semibold tracking-wide text-fg sm:text-base">
-            LịchSử<span className="text-primary">AI</span>
+            Tra Cứu <span className="text-primary">Lịch Sử</span>
           </span>
         </Link>
 

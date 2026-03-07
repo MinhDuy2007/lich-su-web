@@ -34,7 +34,7 @@ export default async function LeaderboardPage() {
     return (
       <SiteShell>
         <section className="card-glass rounded-2xl p-6 text-sm text-red-500">
-          Khong tai duoc bang xep hang luc nay.
+          Không load được BXH lúc này
         </section>
       </SiteShell>
     );
@@ -65,24 +65,24 @@ export default async function LeaderboardPage() {
     <SiteShell>
       <section className="space-y-5">
         <header>
-          <h1 className="text-3xl font-bold">Bang xep hang dong gop</h1>
+          <h1 className="text-3xl font-bold">BXH đóng góp</h1>
           <p className="mt-2 text-sm text-fg/70">
-            Xep hang theo so de xuat su kien da duoc duyet.
+            Xếp hạng theo số đóng góp đã được duyệt
           </p>
         </header>
 
         {items.length === 0 ? (
           <div className="card-glass rounded-2xl p-6 text-sm text-fg/65">
-            Chua co dong gop nao duoc duyet.
+            Chưa có đóng góp nào
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border">
             <table className="min-w-full divide-y divide-border bg-card/70 text-sm">
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-fg/70">
                 <tr>
-                  <th className="px-4 py-3">Hang</th>
-                  <th className="px-4 py-3">Thanh vien</th>
-                  <th className="px-4 py-3 text-right">Dong gop duoc duyet</th>
+                  <th className="px-4 py-3">Hạng</th>
+                  <th className="px-4 py-3">Thành Viên</th>
+                  <th className="px-4 py-3 text-right">Đóng góp được duyệt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

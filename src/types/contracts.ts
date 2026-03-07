@@ -6,6 +6,30 @@ export interface EventDTO {
   content: string;
   startDate: string | null;
   endDate: string | null;
+  startYear: number | null;
+  startMonth: number | null;
+  startDay: number | null;
+  startPrecision:
+    | "unknown"
+    | "year"
+    | "month"
+    | "day"
+    | "month_year"
+    | "day_month"
+    | "day_year"
+    | "day_month_year";
+  endYear: number | null;
+  endMonth: number | null;
+  endDay: number | null;
+  endPrecision:
+    | "unknown"
+    | "year"
+    | "month"
+    | "day"
+    | "month_year"
+    | "day_month"
+    | "day_year"
+    | "day_month_year";
   eventType: string | null;
   locationText: string | null;
   country: string | null;
@@ -13,6 +37,9 @@ export interface EventDTO {
   tags: string[];
   people: string[];
   places: string[];
+  contributorDisplayName: string | null;
+  contributorUsername: string | null;
+  contributorRole: "user" | "moderator" | "admin" | null;
   imageUrls: string[];
   sources: Array<{
     id: string;
@@ -95,4 +122,3 @@ export interface UserBanAction {
   isBanned: boolean;
   reason?: string;
 }
-

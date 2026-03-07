@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useConfirmPopup } from "@/components/ui/confirm-popup";
 
 interface TagItem {
   id: string;
@@ -13,6 +14,7 @@ export function TagsAdmin() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [tags, setTags] = useState<TagItem[]>([]);
+  const { confirm, confirmPopup } = useConfirmPopup();
 
   async function loadTags() {
     const response = await fetch("/api/admin/tags", { cache: "no-store" });
@@ -47,7 +49,12 @@ export function TagsAdmin() {
   }
 
   async function removeTag(id: string) {
-    const accepted = window.confirm("Bạn có chắc muốn xóa thẻ này?");
+    const accepted = await confirm({
+      title: "Xóa thẻ",
+      message: "Bạn có chắc muốn xóa thẻ này?",
+      confirmLabel: "Xóa",
+      destructive: true
+    });
     if (!accepted) return;
 
     const response = await fetch(`/api/admin/tags/${id}`, { method: "DELETE" });
@@ -63,6 +70,7 @@ export function TagsAdmin() {
 
   return (
     <div className="space-y-5">
+      {confirmPopup}
       <form className="card-glass rounded-2xl p-5" onSubmit={createTag}>
         <h2 className="mb-3 text-lg font-semibold">Thêm thẻ</h2>
         <div className="grid gap-3 md:grid-cols-2">

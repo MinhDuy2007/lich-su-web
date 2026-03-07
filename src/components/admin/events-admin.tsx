@@ -1,14 +1,29 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { Pencil, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/cn";
-import { slugify } from "@/lib/slug";
 import { RichEventEditor } from "@/components/admin/rich-event-editor";
+import { FlexibleDateFields } from "@/components/forms/flexible-date-fields";
+import { useConfirmPopup } from "@/components/ui/confirm-popup";
+import { cn } from "@/lib/cn";
+import {
+  emptyEventEditorFormState,
+  type EventEditorFormState,
+  parseCustomSourcesInput,
+  parseListInput,
+  stripHtml
+} from "@/lib/event-editor";
+import { extractImageUrlsFromHtml } from "@/lib/rich-content";
+import { slugify } from "@/lib/slug";
 
 type EventStatus = "draft" | "pending" | "published" | "rejected";
+type StaffRole = "admin" | "moderator";
+
+interface EventsAdminProps {
+  role: StaffRole;
+}
 
 interface AdminEvent {
   id: string;
@@ -17,6 +32,9 @@ interface AdminEvent {
   status: EventStatus;
   event_type: string | null;
   updated_at: string;
+  contributor_display_name?: string | null;
+  contributor_username?: string | null;
+  contributor_role?: "user" | "moderator" | "admin" | null;
 }
 
 interface TagItem {
@@ -45,6 +63,12 @@ interface AdminEventDetail {
   content: string;
   start_date: string | null;
   end_date: string | null;
+  start_year: number | null;
+  start_month: number | null;
+  start_day: number | null;
+  end_year: number | null;
+  end_month: number | null;
+  end_day: number | null;
   event_type: string | null;
   location_text: string | null;
   country: string | null;
@@ -62,34 +86,6 @@ interface ApiResponse<T> {
   data: T;
 }
 
-interface EventFormState {
-  title: string;
-  summary: string;
-  content: string;
-  startDate: string;
-  endDate: string;
-  eventType: string;
-  locationText: string;
-  country: string;
-  status: EventStatus;
-  tags: string[];
-  sourceIds: string[];
-  customSourcesInput: string;
-  peopleInput: string;
-  placesInput: string;
-  imageUrlsInput: string;
-}
-
-const EVENT_TYPE_PRESET = [
-  "chien-tranh",
-  "chinh-tri",
-  "khoa-hoc",
-  "van-hoa",
-  "kinh-te",
-  "xa-hoi",
-  "khac"
-];
-
 const STATUS_LABELS: Record<EventStatus, string> = {
   draft: "Bản nháp",
   pending: "Chờ duyệt",
@@ -97,92 +93,43 @@ const STATUS_LABELS: Record<EventStatus, string> = {
   rejected: "Bị từ chối"
 };
 
-const emptyForm: EventFormState = {
-  title: "",
-  summary: "",
-  content: "",
-  startDate: "",
-  endDate: "",
-  eventType: "",
-  locationText: "",
-  country: "",
-  status: "draft",
-  tags: [],
-  sourceIds: [],
-  customSourcesInput: "",
-  peopleInput: "",
-  placesInput: "",
-  imageUrlsInput: ""
+const CONTRIBUTOR_ROLE_LABEL: Record<"moderator" | "admin", string> = {
+  moderator: "Moderator",
+  admin: "Admin"
 };
 
-function parseListInput(value: string) {
-  return Array.from(
-    new Set(
-      value
-        .split(/[\n,;]/g)
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0)
-    )
+function renderContributorRoleBadge(role: "user" | "moderator" | "admin" | null | undefined) {
+  if (!role || role === "user") {
+    return null;
+  }
+
+  return (
+    <span
+      className={
+        role === "admin"
+          ? "rounded-full border border-emerald-400/60 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300"
+          : "rounded-full border border-sky-400/60 bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-300"
+      }
+    >
+      {CONTRIBUTOR_ROLE_LABEL[role]}
+    </span>
   );
 }
 
-function parseCustomSourcesInput(value: string) {
-  const entries = value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-
-  const items: Array<{ name: string; url: string | null }> = [];
-  const errors: string[] = [];
-  const seen = new Set<string>();
-
-  entries.forEach((entry, index) => {
-    const [rawName, ...urlParts] = entry.split("|");
-    const name = rawName?.trim() ?? "";
-    const url = urlParts.join("|").trim();
-
-    if (!name) {
-      errors.push(`Dòng ${index + 1}: thiếu tên nguồn.`);
-      return;
-    }
-
-    if (url && !/^https?:\/\/\S+$/i.test(url)) {
-      errors.push(`Dòng ${index + 1}: URL không hợp lệ.`);
-      return;
-    }
-
-    const dedupeKey = `${name.toLowerCase()}|${url.toLowerCase()}`;
-    if (seen.has(dedupeKey)) {
-      return;
-    }
-    seen.add(dedupeKey);
-
-    items.push({
-      name,
-      url: url || null
-    });
-  });
-
-  return { items, errors };
+function createEmptyFormState(): EventEditorFormState {
+  return {
+    ...emptyEventEditorFormState,
+    startDate: { ...emptyEventEditorFormState.startDate },
+    endDate: { ...emptyEventEditorFormState.endDate }
+  };
 }
 
-function extractImageUrlsFromHtml(value: string) {
-  const urls = new Set<string>();
-  const imgSrcRegex = /<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi;
-
-  for (const match of value.matchAll(imgSrcRegex)) {
-    const raw = (match[1] ?? "").trim();
-    if (!raw || !/^https?:\/\//i.test(raw)) {
-      continue;
-    }
-    urls.add(raw);
+function toDraft(value: number | null | undefined, padLength?: number) {
+  if (!value) {
+    return "";
   }
 
-  return Array.from(urls);
-}
-
-function stripHtml(value: string) {
-  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return padLength ? String(value).padStart(padLength, "0") : String(value);
 }
 
 function formatDateTime(value: string) {
@@ -197,29 +144,27 @@ function formatDateTime(value: string) {
   }).format(date);
 }
 
-export function EventsAdmin() {
+function defaultStatusHint(role: StaffRole) {
+  return role === "admin"
+    ? "Bài viết tạo mới mặc định ở trạng thái Đã xuất bản."
+    : "Bài viết tạo mới mặc định ở trạng thái Chờ duyệt.";
+}
+
+export function EventsAdmin({ role }: EventsAdminProps) {
   const [events, setEvents] = useState<AdminEvent[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
   const [sources, setSources] = useState<SourceItem[]>([]);
-  const [form, setForm] = useState<EventFormState>(emptyForm);
+  const [form, setForm] = useState<EventEditorFormState>(createEmptyFormState);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editingStatus, setEditingStatus] = useState<EventStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
+  const { confirm, confirmPopup } = useConfirmPopup();
 
   const generatedSlug = useMemo(() => slugify(form.title).slice(0, 160), [form.title]);
-
-  const eventTypeOptions = useMemo(() => {
-    const collected = new Set(EVENT_TYPE_PRESET);
-    events.forEach((event) => {
-      if (event.event_type) {
-        collected.add(event.event_type);
-      }
-    });
-    return Array.from(collected).sort((a, b) => a.localeCompare(b));
-  }, [events]);
-
   const isEditing = Boolean(editingEventId);
 
   async function loadDashboardData() {
@@ -266,16 +211,21 @@ export function EventsAdmin() {
   }, []);
 
   function resetForm() {
-    setForm(emptyForm);
+    setForm(createEmptyFormState());
     setEditingEventId(null);
+    setEditingStatus(null);
   }
 
   function toggleTag(name: string) {
     setForm((prev) => {
       const exists = prev.tags.includes(name);
+      const nextTags = exists ? prev.tags.filter((item) => item !== name) : [...prev.tags, name];
+      const nextEventType =
+        prev.eventType && nextTags.includes(prev.eventType) ? prev.eventType : (nextTags[0] ?? "");
       return {
         ...prev,
-        tags: exists ? prev.tags.filter((item) => item !== name) : [...prev.tags, name]
+        tags: nextTags,
+        eventType: nextEventType
       };
     });
   }
@@ -305,16 +255,24 @@ export function EventsAdmin() {
 
       const detail = payload.data;
       setEditingEventId(detail.id);
+      setEditingStatus(detail.status ?? null);
       setForm({
         title: detail.title ?? "",
         summary: detail.summary ?? "",
         content: detail.content ?? "",
-        startDate: detail.start_date ?? "",
-        endDate: detail.end_date ?? "",
+        startDate: {
+          day: toDraft(detail.start_day, 2),
+          month: toDraft(detail.start_month, 2),
+          year: toDraft(detail.start_year)
+        },
+        endDate: {
+          day: toDraft(detail.end_day, 2),
+          month: toDraft(detail.end_month, 2),
+          year: toDraft(detail.end_year)
+        },
         eventType: detail.event_type ?? "",
         locationText: detail.location_text ?? "",
         country: detail.country ?? "",
-        status: detail.status ?? "draft",
         tags: detail.tags ?? [],
         sourceIds: (detail.sources ?? []).map((source) => source.id),
         customSourcesInput: "",
@@ -350,6 +308,7 @@ export function EventsAdmin() {
       toast.error(customSourcesResult.errors[0]);
       return;
     }
+
     const embeddedImageUrls = extractImageUrlsFromHtml(form.content);
     const imageUrls = Array.from(new Set([...extraImageUrls, ...embeddedImageUrls]));
 
@@ -368,12 +327,15 @@ export function EventsAdmin() {
           title: form.title.trim(),
           summary: form.summary.trim(),
           content: form.content,
-          startDate: form.startDate || null,
-          endDate: form.endDate || null,
+          startDay: form.startDate.day || null,
+          startMonth: form.startDate.month || null,
+          startYear: form.startDate.year || null,
+          endDay: form.endDate.day || null,
+          endMonth: form.endDate.month || null,
+          endYear: form.endDate.year || null,
           eventType: form.eventType || null,
           locationText: form.locationText.trim() || null,
           country: form.country.trim() || null,
-          status: form.status,
           tags: form.tags,
           people: parseListInput(form.peopleInput),
           places: parseListInput(form.placesInput),
@@ -399,7 +361,12 @@ export function EventsAdmin() {
   }
 
   async function removeEvent(eventId: string) {
-    const accepted = window.confirm("Bạn chắc chắn muốn xóa sự kiện này?");
+    const accepted = await confirm({
+      title: "Xóa sự kiện",
+      message: "Bạn chắc chắn muốn xóa sự kiện này?",
+      confirmLabel: "Xóa",
+      destructive: true
+    });
     if (!accepted) return;
 
     setDeletingId(eventId);
@@ -422,8 +389,48 @@ export function EventsAdmin() {
     }
   }
 
+  async function publishEvent(eventId: string) {
+    if (role !== "admin") {
+      return;
+    }
+
+    const accepted = await confirm({
+      title: "Xuất bản sự kiện",
+      message: "Sự kiện sẽ hiển thị công khai ngay sau khi xuất bản. Tiếp tục?",
+      confirmLabel: "Xuất bản"
+    });
+    if (!accepted) {
+      return;
+    }
+
+    setPublishingId(eventId);
+    try {
+      const response = await fetch(`/api/admin/events/${eventId}/publish`, {
+        method: "POST"
+      });
+      const payload = (await response.json()) as ApiResponse<{
+        updated?: boolean;
+        alreadyPublished?: boolean;
+      }>;
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message ?? "Xuất bản sự kiện thất bại");
+      }
+
+      toast.success(
+        payload.data?.alreadyPublished ? "Sự kiện đã ở trạng thái xuất bản" : "Đã xuất bản sự kiện"
+      );
+      await loadDashboardData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Xuất bản sự kiện thất bại");
+    } finally {
+      setPublishingId(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {confirmPopup}
+
       <form className="card-glass rounded-2xl p-5" onSubmit={saveEvent}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -431,9 +438,16 @@ export function EventsAdmin() {
               {isEditing ? "Chỉnh sửa sự kiện" : "Tạo sự kiện mới"}
             </h2>
             <p className="text-xs text-fg/65">
-              Trình soạn thảo hỗ trợ heading, định dạng chữ, danh sách, trích dẫn, ảnh, gallery và bố cục 2 cột.
+              Trình soạn thảo hỗ trợ heading, định dạng chữ, danh sách, trích dẫn, ảnh, gallery và
+              bố cục 2 cột.
+            </p>
+            <p className="mt-1 text-xs text-fg/55">
+              {isEditing && editingStatus
+                ? `Trạng thái hiện tại: ${STATUS_LABELS[editingStatus]}`
+                : defaultStatusHint(role)}
             </p>
           </div>
+
           <div className="flex items-center gap-2">
             {isEditing ? (
               <button
@@ -478,71 +492,18 @@ export function EventsAdmin() {
           </label>
 
           <label className="space-y-1">
-            <span className="text-xs text-fg/70">Loại sự kiện</span>
-            <select
-              className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
-              onChange={(event) => setForm((prev) => ({ ...prev, eventType: event.target.value }))}
-              value={form.eventType}
-            >
-              <option value="">Không xác định</option>
-              {eventTypeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-1">
-            <span className="text-xs text-fg/70">Trạng thái</span>
-            <select
-              className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  status: event.target.value as EventStatus
-                }))
-              }
-              value={form.status}
-            >
-              <option value="draft">Bản nháp</option>
-              <option value="pending">Chờ duyệt</option>
-              <option value="published">Đã xuất bản</option>
-              <option value="rejected">Bị từ chối</option>
-            </select>
-          </label>
-
-          <label className="space-y-1">
-            <span className="text-xs text-fg/70">Ngày bắt đầu</span>
-            <input
-              className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
-              onChange={(event) => setForm((prev) => ({ ...prev, startDate: event.target.value }))}
-              type="date"
-              value={form.startDate}
-            />
-          </label>
-
-          <label className="space-y-1">
-            <span className="text-xs text-fg/70">Ngày kết thúc</span>
-            <input
-              className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
-              onChange={(event) => setForm((prev) => ({ ...prev, endDate: event.target.value }))}
-              type="date"
-              value={form.endDate}
-            />
-          </label>
-
-          <label className="space-y-1">
             <span className="text-xs text-fg/70">Địa điểm</span>
             <input
               className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
-              onChange={(event) => setForm((prev) => ({ ...prev, locationText: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, locationText: event.target.value }))
+              }
               placeholder="Ví dụ: Hà Nội"
               value={form.locationText}
             />
           </label>
 
-          <label className="space-y-1">
+          <label className="space-y-1 md:col-span-2">
             <span className="text-xs text-fg/70">Quốc gia</span>
             <input
               className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
@@ -551,6 +512,19 @@ export function EventsAdmin() {
               value={form.country}
             />
           </label>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <FlexibleDateFields
+            label="Mốc bắt đầu"
+            onChange={(nextValue) => setForm((prev) => ({ ...prev, startDate: nextValue }))}
+            value={form.startDate}
+          />
+          <FlexibleDateFields
+            label="Mốc kết thúc"
+            onChange={(nextValue) => setForm((prev) => ({ ...prev, endDate: nextValue }))}
+            value={form.endDate}
+          />
         </div>
 
         <label className="mt-3 block space-y-1">
@@ -571,16 +545,16 @@ export function EventsAdmin() {
             value={form.content}
           />
           <p className="text-xs text-fg/60">
-            Mẹo: kéo-thả ảnh trực tiếp vào vùng soạn thảo hoặc bấm nút tải ảnh trên thanh công cụ.
+            Mẹo: kéo thả ảnh trực tiếp vào vùng soạn thảo hoặc bấm nút tải ảnh trên thanh công cụ.
           </p>
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <section className="space-y-2 rounded-2xl border border-border/70 bg-card/70 p-3">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold">Thẻ có sẵn</p>
+              <p className="text-sm font-semibold">Thẻ đồng bộ</p>
               <Link className="text-xs text-primary underline" href="/admin/tags">
-                Thêm thẻ mới
+                Quản lý thẻ
               </Link>
             </div>
             <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto pr-1">
@@ -600,7 +574,7 @@ export function EventsAdmin() {
                 </button>
               ))}
               {tags.length === 0 ? (
-                <p className="text-xs text-fg/60">Chưa có thẻ. Vào trang Quản lý thẻ để tạo mới.</p>
+                <p className="text-xs text-fg/60">Chưa có thẻ. Vào trang quản lý thẻ để tạo mới.</p>
               ) : null}
             </div>
           </section>
@@ -609,7 +583,7 @@ export function EventsAdmin() {
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold">Nguồn có sẵn</p>
               <Link className="text-xs text-primary underline" href="/admin/nguon">
-                Thêm nguồn mới
+                Quản lý nguồn
               </Link>
             </div>
             <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
@@ -638,7 +612,9 @@ export function EventsAdmin() {
                 </label>
               ))}
               {sources.length === 0 ? (
-                <p className="text-xs text-fg/60">Chưa có nguồn. Vào trang Quản lý nguồn để tạo mới.</p>
+                <p className="text-xs text-fg/60">
+                  Chưa có nguồn. Vào trang quản lý nguồn để tạo mới.
+                </p>
               ) : null}
             </div>
 
@@ -651,7 +627,9 @@ export function EventsAdmin() {
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, customSourcesInput: event.target.value }))
                 }
-                placeholder={"Ví dụ:\nWikipedia | https://vi.wikipedia.org/...\nBáo Nhân Dân | https://nhandan.vn/..."}
+                placeholder={
+                  "Ví dụ:\\nWikipedia | https://vi.wikipedia.org/...\\nBáo Nhân Dân | https://nhandan.vn/..."
+                }
                 value={form.customSourcesInput}
               />
             </label>
@@ -668,6 +646,7 @@ export function EventsAdmin() {
               value={form.peopleInput}
             />
           </label>
+
           <label className="space-y-1">
             <span className="text-xs text-fg/70">Địa danh (tách bởi dấu phẩy)</span>
             <textarea
@@ -677,11 +656,14 @@ export function EventsAdmin() {
               value={form.placesInput}
             />
           </label>
+
           <label className="space-y-1">
             <span className="text-xs text-fg/70">URL ảnh bổ sung</span>
             <textarea
               className="h-24 w-full rounded-xl border border-border bg-card p-3 text-sm"
-              onChange={(event) => setForm((prev) => ({ ...prev, imageUrlsInput: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, imageUrlsInput: event.target.value }))
+              }
               placeholder="Mỗi dòng một URL ảnh"
               value={form.imageUrlsInput}
             />
@@ -720,6 +702,13 @@ export function EventsAdmin() {
                 <p className="text-xs text-fg/65">
                   {event.slug} | {STATUS_LABELS[event.status]} | {event.event_type ?? "khác"}
                 </p>
+                {event.contributor_display_name ? (
+                  <p className="inline-flex flex-wrap items-center gap-1.5 text-xs text-fg/55">
+                    Người đóng góp: {event.contributor_display_name}
+                    {event.contributor_username ? ` (@${event.contributor_username})` : ""}
+                    {renderContributorRoleBadge(event.contributor_role)}
+                  </p>
+                ) : null}
                 <p className="text-xs text-fg/55">Cập nhật: {formatDateTime(event.updated_at)}</p>
               </div>
               <div className="flex gap-2">
@@ -739,6 +728,17 @@ export function EventsAdmin() {
                   <Pencil className="h-3.5 w-3.5" />
                   {loadingEditId === event.id ? "Đang mở..." : "Sửa"}
                 </button>
+                {role === "admin" && event.status === "draft" ? (
+                  <button
+                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-400 px-3 py-1 text-xs font-semibold text-emerald-500 disabled:opacity-60"
+                    disabled={publishingId === event.id}
+                    onClick={() => void publishEvent(event.id)}
+                    type="button"
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    {publishingId === event.id ? "Đang xuất bản..." : "Xuất bản"}
+                  </button>
+                ) : null}
                 <button
                   className="inline-flex items-center gap-1 rounded-lg border border-red-400 px-3 py-1 text-xs font-semibold text-red-500 disabled:opacity-60"
                   disabled={deletingId === event.id}

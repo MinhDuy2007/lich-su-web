@@ -9,3 +9,4 @@ coverage
 .env.production.local
 *.log
 *.tsbuildinfo
+account.txt

@@ -136,15 +136,15 @@ export default async function PublicUserProfilePage({
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-3">
-              <p className="text-xs text-fg/65">Bookmark su kien</p>
+              <p className="text-xs text-fg/65">Bookmark</p>
               <p className="mt-1 text-2xl font-semibold text-primary">{bookmarkCount}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-3">
-              <p className="text-xs text-fg/65">Dong gop duoc duyet</p>
+              <p className="text-xs text-fg/65">Số đóng góp</p>
               <p className="mt-1 text-2xl font-semibold text-primary">{approvedCount}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-3">
-              <p className="text-xs text-fg/65">Trang thai contributor</p>
+              <p className="text-xs text-fg/65">Trạng Thái</p>
               <p className="mt-1 text-sm font-semibold text-fg">
                 {approvedCount > 0 ? "Đang đóng góp" : "Mời tham gia"}
               </p>
@@ -153,10 +153,10 @@ export default async function PublicUserProfilePage({
         </div>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-semibold">Su kien da dong gop</h2>
+          <h2 className="text-2xl font-semibold">Sự kiện đã đóng góp</h2>
           {submissions.length === 0 ? (
             <div className="card-glass rounded-2xl p-5 text-sm text-fg/65">
-              Chua co su kien nao duoc duyet.
+              chưa có sự kiện nào được đóng góp
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -172,7 +172,7 @@ export default async function PublicUserProfilePage({
                       className="mt-3 inline-flex rounded-xl border border-border px-3 py-2 text-xs font-semibold text-primary"
                       href={`/su-kien/${eventsMap.get(item.approved_event_id)}`}
                     >
-                      Xem su kien da xuat ban
+                      Xem sự kiện đã xuất bản
                     </Link>
                   ) : null}
                 </article>

@@ -5,12 +5,13 @@ import { requireAdminOrModerator } from "@/lib/access";
 export const dynamic = "force-dynamic";
 
 export default async function AdminEventsPage() {
-  await requireAdminOrModerator();
+  const access = await requireAdminOrModerator();
+  const role = access.role === "admin" ? "admin" : "moderator";
 
   return (
     <AdminShell pathname="/admin/su-kien">
       <h1 className="text-3xl font-bold">Quản lý sự kiện</h1>
-      <EventsAdmin />
+      <EventsAdmin role={role} />
     </AdminShell>
   );
 }

@@ -159,12 +159,12 @@ export function ForgotPasswordForm() {
           className="h-11 w-full rounded-xl border border-border bg-bg px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
           onChange={(event) => setOtpCode(event.target.value)}
           pattern="\\d{6,8}"
-          placeholder="Nhập OTP 6-8 số"
+          placeholder="Nhập OTP 8 số"
           required
           value={otpCode}
         />
         <p className="mt-1 text-xs text-fg/65">
-          OTP được gửi qua Supabase Auth Email, tối đa 2 lần trong 1 giờ.
+          OTP có thể bị rơi vào spam, vui lòng kiểm tra cả mục spam
         </p>
       </div>
 

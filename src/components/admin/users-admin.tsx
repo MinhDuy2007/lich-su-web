@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useConfirmPopup } from "@/components/ui/confirm-popup";
 
 interface UserItem {
   user_id: string;
@@ -58,6 +59,7 @@ export function UsersAdmin() {
 
   const [loading, setLoading] = useState(true);
   const [banningIp, setBanningIp] = useState<string | null>(null);
+  const { confirm, confirmPopup } = useConfirmPopup();
 
   async function loadAll() {
     setLoading(true);
@@ -156,9 +158,12 @@ export function UsersAdmin() {
     if (!ipAddress.trim()) return;
 
     const normalizedIp = ipAddress.trim();
-    const firstConfirm = window.confirm(
-      `Xác nhận 1/2: Bạn muốn chặn IP ${normalizedIp} và khóa các tài khoản liên quan?`
-    );
+    const firstConfirm = await confirm({
+      title: "Xác nhận chặn IP",
+      message: `Xác nhận 1/2: Bạn muốn chặn IP ${normalizedIp} và khóa các tài khoản liên quan?`,
+      confirmLabel: "Tiếp tục",
+      destructive: true
+    });
     if (!firstConfirm) {
       return;
     }
@@ -188,9 +193,12 @@ export function UsersAdmin() {
   }
 
   async function handleClusterBan(ipGroup: IpGroupItem) {
-    const firstConfirm = window.confirm(
-      `Xác nhận 1/2: Bạn muốn chặn IP ${ipGroup.ipAddress} và khóa toàn bộ tài khoản liên quan?`
-    );
+    const firstConfirm = await confirm({
+      title: "Xác nhận chặn cụm IP",
+      message: `Xác nhận 1/2: Bạn muốn chặn IP ${ipGroup.ipAddress} và khóa toàn bộ tài khoản liên quan?`,
+      confirmLabel: "Tiếp tục",
+      destructive: true
+    });
     if (!firstConfirm) {
       return;
     }
@@ -213,6 +221,7 @@ export function UsersAdmin() {
 
   return (
     <div className="space-y-6">
+      {confirmPopup}
       <section className="card-glass rounded-2xl p-5">
         <h2 className="mb-3 text-lg font-semibold">Quản lý tài khoản</h2>
         {loading ? <p className="text-sm text-fg/65">Đang tải dữ liệu...</p> : null}

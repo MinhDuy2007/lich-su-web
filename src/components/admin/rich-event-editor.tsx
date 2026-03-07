@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -187,7 +187,9 @@ export function RichEventEditor({ value, onChange, disabled = false }: RichEvent
       .focus()
       .insertTable({ rows: 1, cols: 2, withHeaderRow: false })
       .run();
-    toast.message("Đã chèn bố cục 2 cột. Hãy đặt ảnh ở một cột và nội dung ở cột còn lại.");
+    toast.message(
+      "Đã chèn bố cục 2 cột. Hãy đặt ảnh ở một cột và nội dung ở cột còn lại."
+    );
   }
 
   function onInsertGalleryLayout() {
@@ -211,7 +213,7 @@ export function RichEventEditor({ value, onChange, disabled = false }: RichEvent
     onClick: () => void;
     active?: boolean;
     label: string;
-    children: React.ReactNode;
+    children: ReactNode;
   }) {
     return (
       <button
@@ -296,7 +298,7 @@ export function RichEventEditor({ value, onChange, disabled = false }: RichEvent
         <ToolbarButton label="Tải ảnh lên" onClick={onPickImage}>
           <ImagePlus className="h-4 w-4" />
         </ToolbarButton>
-        <ToolbarButton label="Bố cục ảnh + chữ" onClick={onInsertSideBySideLayout}>
+        <ToolbarButton label="Bố cục ảnh và chữ" onClick={onInsertSideBySideLayout}>
           <Columns2 className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton label="Gallery 3 cột" onClick={onInsertGalleryLayout}>
@@ -314,11 +316,11 @@ export function RichEventEditor({ value, onChange, disabled = false }: RichEvent
 
       <div
         className="rounded-b-2xl"
+        onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
           void insertUploadedFiles(event.dataTransfer?.files ?? null);
         }}
-        onDragOver={(event) => event.preventDefault()}
         onPaste={(event) => {
           const files = event.clipboardData?.files;
           if (!files || files.length === 0) {

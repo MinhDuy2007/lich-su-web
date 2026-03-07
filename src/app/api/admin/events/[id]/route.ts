@@ -8,16 +8,12 @@ import { syncEventRelations } from "@/lib/admin-events";
 import { slugify } from "@/lib/slug";
 import { extractImageUrlsFromHtml, sanitizeRichContentHtml } from "@/lib/rich-content";
 import { pushNotificationToUsers } from "@/lib/notifications";
+import { resolveSourceIds } from "@/lib/event-sources";
+import { buildEventDateColumns } from "@/lib/event-persistence";
+import { isMissingColumnError } from "@/lib/db-compat";
 
 interface Params {
   params: Promise<{ id: string }>;
-}
-
-type AdminClient = ReturnType<typeof createSupabaseAdmin>;
-
-interface CustomSourceInput {
-  name: string;
-  url?: string | null;
 }
 
 async function resolveUniqueSlugForUpdate(eventId: string, baseValue: string) {
@@ -45,69 +41,6 @@ async function resolveUniqueSlugForUpdate(eventId: string, baseValue: string) {
   }
 
   return `${normalizedBase}-${Date.now()}`.slice(0, 160);
-}
-
-function normalizeSourceName(value: string) {
-  return value.trim().replace(/\s+/g, " ").slice(0, 255);
-}
-
-function normalizeSourceUrl(value: string | null | undefined) {
-  const nextValue = value?.trim() ?? "";
-  return nextValue.length > 0 ? nextValue : null;
-}
-
-async function resolveSourceIds(
-  admin: AdminClient,
-  sourceIds: string[],
-  customSources: CustomSourceInput[]
-) {
-  const mergedIds = new Set(sourceIds);
-
-  for (const source of customSources) {
-    const normalizedName = normalizeSourceName(source.name);
-    if (!normalizedName) {
-      continue;
-    }
-
-    const normalizedUrl = normalizeSourceUrl(source.url);
-    const existingResult = await admin
-      .from("sources")
-      .select("id,url")
-      .eq("name", normalizedName)
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    if (existingResult.error) {
-      throw new Error(existingResult.error.message);
-    }
-
-    const existingRows = existingResult.data ?? [];
-    const matchedRow = existingRows.find((row) => (row.url ?? null) === normalizedUrl);
-    const fallbackRow = existingRows[0];
-    const targetRow = matchedRow ?? fallbackRow;
-
-    if (targetRow?.id) {
-      mergedIds.add(targetRow.id);
-      continue;
-    }
-
-    const insertResult = await admin
-      .from("sources")
-      .insert({
-        name: normalizedName,
-        url: normalizedUrl
-      })
-      .select("id")
-      .single();
-
-    if (insertResult.error || !insertResult.data?.id) {
-      throw new Error(insertResult.error?.message ?? "Không thêm được nguồn mới");
-    }
-
-    mergedIds.add(insertResult.data.id);
-  }
-
-  return Array.from(mergedIds);
 }
 
 export async function GET(request: NextRequest, context: Params) {
@@ -152,11 +85,19 @@ export async function PATCH(request: NextRequest, context: Params) {
     return fail("Nội dung sự kiện không hợp lệ", 400);
   }
 
+  const admin = createSupabaseAdmin();
+  const existingResult = await admin.from("events").select("id,status").eq("id", id).maybeSingle();
+  if (existingResult.error) {
+    return fail("Không tải được sự kiện cần cập nhật", 500, existingResult.error.message);
+  }
+  if (!existingResult.data) {
+    return fail("Sự kiện không tồn tại", 404);
+  }
+
   const mergedImageUrls = Array.from(
     new Set([...(parsed.data.imageUrls ?? []), ...extractImageUrlsFromHtml(safeContent)])
   );
 
-  const admin = createSupabaseAdmin();
   let mergedSourceIds: string[] = [];
   try {
     mergedSourceIds = await resolveSourceIds(
@@ -171,23 +112,49 @@ export async function PATCH(request: NextRequest, context: Params) {
       error instanceof Error ? error.message : "Lỗi hệ thống"
     );
   }
-  const { error } = await admin
-    .from("events")
-    .update({
-      slug,
-      title: parsed.data.title,
-      summary: parsed.data.summary,
-      content: safeContent,
-      start_date: parsed.data.startDate ?? null,
-      end_date: parsed.data.endDate ?? null,
-      event_type: parsed.data.eventType ?? null,
-      location_text: parsed.data.locationText ?? null,
-      country: parsed.data.country ?? null,
-      status: parsed.data.status,
-      updated_by: access.userId,
-      updated_at: new Date().toISOString()
-    })
-    .eq("id", id);
+  const dateColumns = buildEventDateColumns(parsed.data);
+  let error =
+    (
+      await admin
+        .from("events")
+        .update({
+          slug,
+          title: parsed.data.title,
+          summary: parsed.data.summary,
+          content: safeContent,
+          ...dateColumns,
+          event_type: parsed.data.eventType ?? null,
+          location_text: parsed.data.locationText ?? null,
+          country: parsed.data.country ?? null,
+          status: existingResult.data.status,
+          updated_by: access.userId,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", id)
+    ).error ?? null;
+
+  if (isMissingColumnError(error, ["start_year", "start_month", "start_day"])) {
+    error =
+      (
+        await admin
+          .from("events")
+          .update({
+            slug,
+            title: parsed.data.title,
+            summary: parsed.data.summary,
+            content: safeContent,
+            start_date: dateColumns.start_date,
+            end_date: dateColumns.end_date,
+            event_type: parsed.data.eventType ?? null,
+            location_text: parsed.data.locationText ?? null,
+            country: parsed.data.country ?? null,
+            status: existingResult.data.status,
+            updated_by: access.userId,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", id)
+      ).error ?? null;
+  }
 
   if (error) {
     if (error.code === "23505") {

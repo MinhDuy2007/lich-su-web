@@ -61,14 +61,11 @@ export function ChangePasswordForm() {
 
   return (
     <section className="card-glass rounded-2xl p-5 md:p-6">
-      <h2 className="text-xl font-semibold">Doi mat khau</h2>
-      <p className="mt-1 text-sm text-fg/65">
-        Yeu cau nhap dung mat khau hien tai. Khong su dung OTP.
-      </p>
+      <h2 className="text-xl font-semibold">Đổi mật khẩu</h2>
 
       <form className="mt-5 space-y-3" onSubmit={onSubmit}>
         <div>
-          <label className="mb-1 block text-sm font-medium">Mat khau hien tai</label>
+          <label className="mb-1 block text-sm font-medium">Mật Khẩu Hiện Tại</label>
           <input
             className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
             onChange={(event) => setCurrentPassword(event.target.value)}
@@ -78,7 +75,7 @@ export function ChangePasswordForm() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Mat khau moi</label>
+          <label className="mb-1 block text-sm font-medium">Mật Khẩu Mới</label>
           <input
             className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
             minLength={8}
@@ -89,7 +86,7 @@ export function ChangePasswordForm() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Xac nhan mat khau moi</label>
+          <label className="mb-1 block text-sm font-medium">Xác Nhận</label>
           <input
             className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm outline-none ring-primary/30 transition focus:ring-2"
             minLength={8}

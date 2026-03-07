@@ -20,7 +20,7 @@ function buildImagePath(userId: string, fileName: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const access = await requireRole(request, ["admin", "moderator"]);
+  const access = await requireRole(request, ["admin", "moderator", "user"]);
   if (!access.ok || !access.userId) {
     return fail("Không đủ quyền", access.status);
   }
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   if (uploadResult.error) {
     return fail(
-      "Không tải được ảnh. Hãy kiểm tra bucket lưu trữ sự kiện",
+      "Kh?ng t?i du?c ?nh. H?y ki?m tra bucket luu tr? s? ki?n",
       500,
       uploadResult.error.message
     );

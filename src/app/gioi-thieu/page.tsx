@@ -1,10 +1,11 @@
 import { SiteShell } from "@/components/layout/site-shell";
+import { SupportRequestForm } from "@/components/support/support-request-form";
 
 const items = [
-  "Tìm sự kiện theo từ khóa, mốc thời gian và chủ đề.",
-  "Lưu sự kiện, ghi chú cá nhân, xem lại khi cần.",
-  "Hỏi AI để tóm tắt nhanh hoặc làm rõ nội dung.",
-  "Đóng góp dữ liệu và theo dõi trạng thái duyệt."
+  "Tra cứu sự kiện theo từ khóa, mốc thời gian và chủ đề liên quan.",
+  "Lưu bài viết, ghi chú cá nhân và theo dõi cập nhật mới.",
+  "Dùng AI để tóm tắt nhanh hoặc hỏi đáp theo nội dung sự kiện.",
+  "Gửi đề xuất nội dung mới và theo dõi phản hồi từ đội ngũ kiểm duyệt."
 ];
 
 export default function AboutPage() {
@@ -14,8 +15,8 @@ export default function AboutPage() {
         <header className="card-glass rounded-3xl p-8">
           <h1 className="text-3xl font-bold">Giới thiệu LịchSửAI</h1>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-fg/75">
-            LịchSửAI là nền tảng tra cứu sự kiện lịch sử bằng trải nghiệm rõ ràng,
-            dễ dùng và tập trung vào thao tác bạn cần làm ngay.
+            LịchSửAI là nền tảng tra cứu sự kiện lịch sử với trải nghiệm rõ ràng, dễ dùng
+            và tập trung vào thao tác bạn cần làm ngay.
           </p>
         </header>
 
@@ -26,6 +27,8 @@ export default function AboutPage() {
             </li>
           ))}
         </ul>
+
+        <SupportRequestForm />
       </section>
     </SiteShell>
   );

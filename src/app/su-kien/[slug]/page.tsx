@@ -6,6 +6,7 @@ import { EventDetailTabs } from "@/components/events/event-detail-tabs";
 import { getEventBySlug, getRelatedEvents } from "@/lib/events";
 import { sanitizeRichContentHtml } from "@/lib/rich-content";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -27,13 +28,20 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     content: sanitizeRichContentHtml(event.content)
   };
   const admin = createSupabaseAdmin();
-  const { data: cachedSummary } = await admin
-    .from("ai_summaries_cache")
-    .select("summary")
-    .eq("event_id", event.id)
-    .eq("style", "paragraph")
-    .eq("length", "short")
-    .maybeSingle();
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  const { data: cachedSummary } = user
+    ? await admin
+        .from("ai_summaries_cache")
+        .select("summary")
+        .eq("user_id", user.id)
+        .eq("event_id", event.id)
+        .eq("style", "paragraph")
+        .eq("length", "short")
+        .maybeSingle()
+    : { data: null };
 
   return (
     <SiteShell>

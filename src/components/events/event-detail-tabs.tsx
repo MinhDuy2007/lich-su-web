@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { BookText, CalendarDays, Files, Link2, MapPin, Sparkles } from "lucide-react";
+import { BookText, CalendarDays, Files, Link2, MapPin, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AiAssistantPanel } from "@/components/ai/ai-assistant-panel";
 import { EventComments } from "@/components/events/event-comments";
@@ -11,42 +11,12 @@ import { FollowEventButton } from "@/components/events/follow-event-button";
 import { PersonalActions } from "@/components/events/personal-actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/cn";
+import { formatFlexibleDateRange } from "@/lib/flexible-date";
 import type { EventDTO } from "@/types/contracts";
 
 interface EventDetailTabsProps {
   event: EventDTO;
   initialSummary: string | null;
-}
-
-function formatDateLabel(value: string | null) {
-  if (!value) {
-    return "Chưa rõ";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }).format(date);
-}
-
-function toTimeline(startDate: string | null, endDate: string | null) {
-  if (!startDate && !endDate) {
-    return "Chưa rõ mốc thời gian";
-  }
-  if (startDate && endDate) {
-    return `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`;
-  }
-  if (startDate) {
-    return `Từ ${formatDateLabel(startDate)}`;
-  }
-
-  return `Đến ${formatDateLabel(endDate)}`;
 }
 
 function contentLooksLikeHtml(input: string) {
@@ -63,14 +33,62 @@ const panelAnimation = {
   transition: { duration: 0.2, ease: "easeOut" as const }
 };
 
+const CONTRIBUTOR_ROLE_LABEL: Record<"moderator" | "admin", string> = {
+  moderator: "Moderator",
+  admin: "Admin"
+};
+
+function renderContributorRoleBadge(role: EventDTO["contributorRole"]) {
+  if (!role || role === "user") {
+    return null;
+  }
+
+  return (
+    <span
+      className={
+        role === "admin"
+          ? "rounded-full border border-emerald-400/60 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300"
+          : "rounded-full border border-sky-400/60 bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-300"
+      }
+    >
+      {CONTRIBUTOR_ROLE_LABEL[role]}
+    </span>
+  );
+}
+
 export function EventDetailTabs({ event, initialSummary }: EventDetailTabsProps) {
   const [activeTab, setActiveTab] = useState("bai-viet");
   const [summarizeSignal, setSummarizeSignal] = useState(0);
   const [expandedArticle, setExpandedArticle] = useState(false);
 
   const timeline = useMemo(
-    () => toTimeline(event.startDate, event.endDate),
-    [event.startDate, event.endDate]
+    () =>
+      formatFlexibleDateRange(
+        {
+          day: event.startDay,
+          month: event.startMonth,
+          year: event.startYear
+        },
+        {
+          day: event.endDay,
+          month: event.endMonth,
+          year: event.endYear
+        },
+        {
+          startDate: event.startDate,
+          endDate: event.endDate
+        }
+      ),
+    [
+      event.startDate,
+      event.endDate,
+      event.startDay,
+      event.startMonth,
+      event.startYear,
+      event.endDay,
+      event.endMonth,
+      event.endYear
+    ]
   );
   const richContent = contentLooksLikeHtml(event.content);
   const needsCollapse = contentLength(event.content) > 1800;
@@ -122,6 +140,14 @@ export function EventDetailTabs({ event, initialSummary }: EventDetailTabsProps)
             <MapPin className="h-4 w-4 text-primary" />
             {event.locationText ?? "Chưa rõ địa điểm"}
           </p>
+          {event.contributorDisplayName ? (
+            <p className="inline-flex items-center gap-2 md:col-span-3">
+              <UserRound className="h-4 w-4 text-primary" />
+              Người đóng góp: {event.contributorDisplayName}
+              {event.contributorUsername ? ` (@${event.contributorUsername})` : ""}
+              {renderContributorRoleBadge(event.contributorRole)}
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">

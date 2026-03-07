@@ -76,8 +76,10 @@ export async function POST(request: NextRequest) {
 
     const safeContent = trimForModel(event.content);
     const prompt = [
-      "Bạn là trợ lý lịch sử, hãy trả lời câu hỏi dựa trên sự kiện cho sẵn.",
-      "Nếu câu hỏi nằm ngoài nội dung sự kiện, hãy nói rõ phạm vi thông tin.",
+      "Bạn là trợ lý lịch sử. Hãy trả lời câu hỏi dựa trên sự kiện cho sẵn bằng tiếng Việt có dấu.",
+      "Luôn trả lời bằng Markdown có cấu trúc rõ ràng.",
+      "Nếu phù hợp, chia thành các mục: Bối cảnh, Trả lời ngắn, Phân tích thêm, Gợi ý đọc tiếp.",
+      "Nếu thông tin không có trong sự kiện, phải nói rõ phạm vi còn thiếu thay vì đoán.",
       `Sự kiện: ${event.title}`,
       `Tóm tắt: ${event.summary}`,
       `Nội dung: ${safeContent}`,

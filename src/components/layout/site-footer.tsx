@@ -12,8 +12,8 @@ const footerCols = [
   {
     title: "Liên hệ",
     items: [
-      { href: "mailto:support@lichsuai.vn", label: "support@lichsuai.vn" },
-      { href: "tel:+84901234567", label: "0901 234 567" },
+      { href: "mailto:support@lichsuai.vn", label: "minhduy.contactwithme@gmail.com" },
+      { href: "tel:+84901234567", label: "079 6950 737" },
       { href: "/gioi-thieu", label: "Gửi góp ý cho đội ngũ" }
     ]
   }
@@ -24,7 +24,7 @@ export function SiteFooter() {
     <footer className="border-t border-border/70 bg-card/50">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-3 md:px-6">
         <div>
-          <h3 className="text-lg font-semibold text-fg">LịchSửAI</h3>
+          <h3 className="text-lg font-semibold text-fg">Web Tra Cứu Lịch Sử</h3>
           <p className="mt-3 max-w-sm text-sm leading-6 text-fg/70">
             Tra cứu sự kiện lịch sử theo cách trực quan, lưu lại nội dung quan trọng và
             xem lại nhanh khi cần.
@@ -57,7 +57,7 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-border/70 px-4 py-4 text-center text-xs text-fg/60">
-        {new Date().getFullYear()} LịchSửAI. Bảo lưu mọi quyền.
+        {new Date().getFullYear()} Web Tra cứu sự kiện lịch sử được thực hiện nhằm phục vụ cho bài NCKH DHTV
       </div>
     </footer>
   );

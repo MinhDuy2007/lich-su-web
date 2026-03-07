@@ -7,16 +7,16 @@ function mapSupabaseOtpError(rawMessage: string) {
   const message = rawMessage.toLowerCase();
 
   if (message.includes("email rate limit exceeded")) {
-    return "Supabase Auth đang giới hạn tốc độ gửi email. Thử lại sau.";
+    return "Hệ thống đang bị giới hạn, vui lòng thử lại sau";
   }
   if (message.includes("security purpose")) {
     return "Yêu cầu gửi OTP tạm thời bị chặn vì lý do bảo mật. Thử lại sau.";
   }
   if (message.includes("forbidden")) {
-    return "Supabase Auth Email chưa được cấu hình đầy đủ trên trang quản trị.";
+    return "Email chưa được cấu hình đầy đủ trên trang quản trị.";
   }
 
-  return `Supabase Auth Email loi: ${rawMessage}`;
+  return `Email loi: ${rawMessage}`;
 }
 
 function resolveAuthRedirectUrl() {

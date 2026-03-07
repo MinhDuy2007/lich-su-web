@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LoaderCircle, Sparkles } from "lucide-react";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 
 interface AiAssistantPanelProps {
   eventId: string;
@@ -148,7 +149,7 @@ export function AiAssistantPanel({
         <h3 className="text-lg font-semibold">Trò chuyện với AI</h3>
       </div>
       <p className="mb-4 text-sm text-fg/75">
-        Nhận tóm tắt nhanh hoặc hỏi đáp theo ngữ cảnh của sự kiện này.
+        Nhận tóm tắt nhanh hoặc hỏi đáp theo đúng ngữ cảnh của sự kiện này.
       </p>
 
       <button
@@ -161,8 +162,12 @@ export function AiAssistantPanel({
         Tóm tắt nhanh
       </button>
 
-      <div className="rounded-xl border border-border bg-card p-3 text-sm leading-6 text-fg/80">
-        {summary || "Chưa có tóm tắt. Hãy bấm nút để tạo tóm tắt nhanh."}
+      <div className="rounded-xl border border-border bg-card p-4 text-sm leading-6 text-fg/80">
+        {summary ? (
+          <MarkdownContent content={summary} />
+        ) : (
+          <p>Chưa có tóm tắt. Hãy bấm nút để tạo tóm tắt nhanh.</p>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -201,8 +206,8 @@ export function AiAssistantPanel({
       </div>
 
       {answer ? (
-        <div className="mt-4 rounded-xl border border-border bg-card p-3 text-sm leading-6 text-fg/80">
-          {answer}
+        <div className="mt-4 rounded-xl border border-border bg-card p-4 text-sm leading-6 text-fg/80">
+          <MarkdownContent content={answer} />
         </div>
       ) : null}
 

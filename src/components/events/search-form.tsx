@@ -4,30 +4,52 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
-export function SearchForm() {
+interface SearchTagOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface SearchFormProps {
+  tags: SearchTagOption[];
+}
+
+export function SearchForm({ tags }: SearchFormProps) {
   const params = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState(params?.get("query") ?? "");
-  const [eventType, setEventType] = useState(params?.get("eventType") ?? "");
+  const [selectedTag, setSelectedTag] = useState(params?.get("tag") ?? "");
 
-  const types = useMemo(
-    () => ["chien-tranh", "chinh-tri", "khoa-hoc", "van-hoa", "kinh-te", "khac"],
-    []
-  );
+  const tagOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return tags.filter((tag) => {
+      const normalized = tag.name.trim().toLowerCase();
+      if (!normalized || seen.has(normalized)) {
+        return false;
+      }
+      seen.add(normalized);
+      return true;
+    });
+  }, [tags]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextParams = new URLSearchParams(params?.toString() ?? "");
-    if (query) {
-      nextParams.set("query", query);
+
+    if (query.trim()) {
+      nextParams.set("query", query.trim());
     } else {
       nextParams.delete("query");
     }
-    if (eventType) {
-      nextParams.set("eventType", eventType);
+
+    if (selectedTag) {
+      nextParams.set("tag", selectedTag);
     } else {
-      nextParams.delete("eventType");
+      nextParams.delete("tag");
     }
+
+    // Legacy cleanup: search UI no longer uses event_type dropdown.
+    nextParams.delete("eventType");
     nextParams.set("page", "1");
     router.push(`/tim-kiem?${nextParams.toString()}`);
   }
@@ -46,23 +68,25 @@ export function SearchForm() {
           value={query}
         />
       </div>
+
       <select
         className="h-11 rounded-xl border border-border bg-card px-3 text-sm"
-        onChange={(event) => setEventType(event.target.value)}
-        value={eventType}
+        onChange={(event) => setSelectedTag(event.target.value)}
+        value={selectedTag}
       >
-        <option value="">Tat ca loai su kien</option>
-        {types.map((type) => (
-          <option key={type} value={type}>
-            {type}
+        <option value="">Tất cả</option>
+        {tagOptions.map((tag) => (
+          <option key={tag.id} value={tag.name}>
+            #{tag.name}
           </option>
         ))}
       </select>
+
       <button
         className="h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-fg transition hover:brightness-105"
         type="submit"
       >
-        Tim kiem
+        Tìm kiếm
       </button>
     </form>
   );

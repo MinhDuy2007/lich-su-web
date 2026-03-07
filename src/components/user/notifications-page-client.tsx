@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -32,6 +32,24 @@ function formatDateLabel(value: string) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
+}
+
+function statusLabel(value: unknown) {
+  switch (value) {
+    case "reviewing":
+      return "Đang xử lý";
+    case "resolved":
+      return "Đã xử lý";
+    case "rejected":
+      return "Từ chối báo cáo";
+    default:
+      return "Đã phản hồi";
+  }
+}
+
+function readMetadataText(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  return typeof value === "string" && value.trim() ? value : null;
 }
 
 export function NotificationsPageClient() {
@@ -71,6 +89,12 @@ export function NotificationsPageClient() {
     void loadNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (selectedFromQuery) {
+      setSelectedId(selectedFromQuery);
+    }
+  }, [selectedFromQuery]);
 
   const selected = useMemo(
     () => items.find((item) => item.id === selectedId) ?? items[0] ?? null,
@@ -116,13 +140,18 @@ export function NotificationsPageClient() {
     }
   }
 
+  const isReportResponse = selected?.type === "report_response";
+  const reportEventTitle = selected ? readMetadataText(selected.metadata, "eventTitle") : null;
+  const reportAdminResponse = selected ? readMetadataText(selected.metadata, "adminResponse") : null;
+  const reportChangesApplied = selected ? readMetadataText(selected.metadata, "changesApplied") : null;
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">Thông báo của bạn</h1>
           <p className="mt-1 text-sm text-fg/70">
-            Mở thông báo để xem đầy đủ nội dung và chuyển nhanh đến trang liên quan.
+            Mở từng mục để xem nội dung đầy đủ và phản hồi liên quan.
           </p>
         </div>
         <button
@@ -181,17 +210,58 @@ export function NotificationsPageClient() {
               </p>
               <h2 className="text-xl font-semibold">{selected.title}</h2>
               <p className="text-xs text-fg/60">{formatDateLabel(selected.created_at)}</p>
-              <div className="rounded-xl border border-border bg-card p-4 text-sm leading-7 text-fg/85">
-                {selected.body}
-              </div>
-              {selected.link ? (
-                <Link
-                  className="inline-flex rounded-xl border border-border bg-bg px-4 py-2 text-sm font-semibold text-fg/80 transition hover:border-primary/40 hover:text-primary"
-                  href={selected.link}
-                >
-                  Mở trang liên quan
-                </Link>
-              ) : null}
+
+              {isReportResponse ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-border bg-card p-4 text-sm leading-7 text-fg/85">
+                    {selected.body}
+                  </div>
+
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">
+                      Tình trạng xử lý
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-fg">
+                      {statusLabel(selected.metadata.status)}
+                    </p>
+                    {reportEventTitle ? (
+                      <p className="mt-2 text-sm text-fg/75">Bài viết liên quan: {reportEventTitle}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-fg/60">
+                      Thay đổi đã thực hiện
+                    </p>
+                    <p className="mt-2 whitespace-pre-line text-sm leading-7 text-fg/85">
+                      {reportChangesApplied ?? "Hiện chưa có ghi chú thay đổi cụ thể."}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-fg/60">
+                      Phản hồi của admin
+                    </p>
+                    <p className="mt-2 whitespace-pre-line text-sm leading-7 text-fg/85">
+                      {reportAdminResponse ?? "Hiện chưa có phản hồi chi tiết."}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-xl border border-border bg-card p-4 text-sm leading-7 text-fg/85">
+                    {selected.body}
+                  </div>
+                  {selected.link ? (
+                    <Link
+                      className="inline-flex rounded-xl border border-border bg-bg px-4 py-2 text-sm font-semibold text-fg/80 transition hover:border-primary/40 hover:text-primary"
+                      href={selected.link}
+                    >
+                      Mở trang liên quan
+                    </Link>
+                  ) : null}
+                </>
+              )}
             </div>
           )}
         </section>

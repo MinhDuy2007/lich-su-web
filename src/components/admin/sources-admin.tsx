@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useConfirmPopup } from "@/components/ui/confirm-popup";
 
 interface SourceItem {
   id: string;
@@ -13,6 +14,7 @@ export function SourcesAdmin() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [sources, setSources] = useState<SourceItem[]>([]);
+  const { confirm, confirmPopup } = useConfirmPopup();
 
   async function loadSources() {
     const response = await fetch("/api/admin/sources", { cache: "no-store" });
@@ -50,7 +52,12 @@ export function SourcesAdmin() {
   }
 
   async function removeSource(id: string) {
-    const accepted = window.confirm("Bạn có chắc muốn xóa nguồn này?");
+    const accepted = await confirm({
+      title: "Xóa nguồn",
+      message: "Bạn có chắc muốn xóa nguồn này?",
+      confirmLabel: "Xóa",
+      destructive: true
+    });
     if (!accepted) return;
 
     const response = await fetch(`/api/admin/sources/${id}`, { method: "DELETE" });
@@ -66,6 +73,7 @@ export function SourcesAdmin() {
 
   return (
     <div className="space-y-5">
+      {confirmPopup}
       <form className="card-glass rounded-2xl p-5" onSubmit={createSource}>
         <h2 className="mb-3 text-lg font-semibold">Thêm nguồn</h2>
         <div className="grid gap-3 md:grid-cols-2">

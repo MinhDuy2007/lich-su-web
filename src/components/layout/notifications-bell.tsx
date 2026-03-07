@@ -152,7 +152,10 @@ export function NotificationsBell() {
             ) : null}
 
             {items.map((item) => {
-              const detailHref = `/thong-bao?id=${item.id}`;
+              const detailHref =
+                item.type === "support_request"
+                  ? item.link ?? "/admin/thong-bao"
+                  : `/thong-bao?id=${item.id}`;
               return (
                 <Link
                   className={cn(

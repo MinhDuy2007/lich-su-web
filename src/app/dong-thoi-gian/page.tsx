@@ -22,10 +22,7 @@ export default async function TimelinePage() {
     <SiteShell>
       <section className="space-y-6">
         <header>
-          <h1 className="text-3xl font-bold">Dong thoi gian su kien</h1>
-          <p className="mt-2 text-sm text-fg/70">
-            Theo doi su kien theo moc nam. Du lieu cap nhat tu Supabase.
-          </p>
+          <h1 className="text-3xl font-bold">Dòng thời gian</h1>
         </header>
 
         <div className="space-y-8">
