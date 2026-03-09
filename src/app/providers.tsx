@@ -20,3 +20,4 @@ export function AppProviders({ children }: AppProvidersProps) {
   );
 }
 
+//Khong gui duoc OTP qua email: Resend dang o che do test. Ban chi gui duoc den email chu tai khoan Resend. Muon gui den email khac, can verify domain va dat RESEND_FROM_EMAIL theo domain da verify.
