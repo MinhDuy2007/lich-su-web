@@ -13,9 +13,9 @@ export default function AboutPage() {
     <SiteShell>
       <section className="space-y-6">
         <header className="card-glass rounded-3xl p-8">
-          <h1 className="text-3xl font-bold">Giới thiệu LịchSửAI</h1>
+          <h1 className="text-3xl font-bold">Giới thiệu trang web</h1>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-fg/75">
-            LịchSửAI là nền tảng tra cứu sự kiện lịch sử với trải nghiệm rõ ràng, dễ dùng
+            Website tra cứu sự kiện lịch sử là nền tảng tra cứu sự kiện lịch sử với trải nghiệm rõ ràng, dễ dùng
             và tập trung vào thao tác bạn cần làm ngay.
           </p>
         </header>

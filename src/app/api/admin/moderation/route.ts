@@ -163,12 +163,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireRole(request, ["admin"]);
   if (!access.ok || !access.userId) {
-    return fail("Chá»‰ admin má»›i Ä‘Æ°á»£c duyá»‡t Ä‘á» xuáº¥t", access.status);
+    return fail("Chỉ admin mới được duyệt đề xuất", access.status);
   }
 
   const parsed = await parseBody(request, moderationActionSchema);
   if (!parsed.data) {
-    return fail(parsed.error ?? "Payload khÃ´ng há»£p lá»‡", 400);
+    return fail(parsed.error ?? "Payload không hợp lệ", 400);
   }
 
   const admin = createSupabaseAdmin();
@@ -179,10 +179,10 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (submissionError || !submission) {
-    return fail("KhÃ´ng tÃ¬m tháº¥y bÃ i gá»­i", 404);
+    return fail("Không tìm thấy bài gửi", 404);
   }
   if (submission.status !== "pending") {
-    return fail("BÃ i gá»­i Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½", 400);
+    return fail("Bài gửi đã được xử lý", 400);
   }
 
   if (parsed.data.action === "reject") {
@@ -196,15 +196,15 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", submission.id);
     if (error) {
-      return fail("Tá»« chá»‘i bÃ i gá»­i tháº¥t báº¡i", 500, error.message);
+      return fail("Từ chối bài gửi thất bại", 500, error.message);
     }
 
     try {
       if (submission.submitted_by) {
         await pushNotificationToUser(admin, submission.submitted_by, {
           type: "submission_reviewed",
-          title: "Äá» xuáº¥t Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½",
-          body: "Äá» xuáº¥t cá»§a báº¡n Ä‘Ã£ bá»‹ tá»« chá»‘i. Vui lÃ²ng má»Ÿ thÃ´ng bÃ¡o Ä‘á»ƒ xem ghi chÃº.",
+          title: "Đề xuất đã được xử lý",
+          body: "Đề xuất của bạn đã bị từ chối. Vui lòng mở thông báo để xem ghi chú.",
           link: "/thong-bao"
         });
       }
@@ -218,8 +218,8 @@ export async function POST(request: NextRequest) {
       if (notifyIds.length > 0) {
         await pushNotificationToUsers(admin, notifyIds, {
           type: "admin_broadcast",
-          title: "CÃ³ Ä‘á» xuáº¥t bá»‹ tá»« chá»‘i",
-          body: `Äá» xuáº¥t "${submission.title}" Ä‘Ã£ Ä‘Æ°á»£c admin tá»« chá»‘i.`,
+          title: "Có đề xuất bị từ chối",
+          body: `Đề xuất "${submission.title}" đã được admin từ chối.`,
           link: "/admin/kiem-duyet",
           metadata: {
             submissionId: submission.id,
@@ -243,15 +243,15 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     return fail(
-      "KhÃ´ng xá»­ lÃ½ Ä‘Æ°á»£c nguá»“n Ä‘i kÃ¨m bÃ i gá»­i",
+      "Không xử lý được nguồn đi kèm bài gửi",
       500,
-      error instanceof Error ? error.message : "Lá»—i há»‡ thá»‘ng"
+      error instanceof Error ? error.message : "Lỗi hệ thống"
     );
   }
 
   const safeContent = sanitizeRichContentHtml(submission.content ?? "");
   if (!safeContent) {
-    return fail("Ná»™i dung Ä‘á» xuáº¥t khÃ´ng há»£p lá»‡ sau khi lÃ m sáº¡ch dá»¯ liá»‡u", 400);
+    return fail("Nội dung đề xuất không hợp lệ sau khi làm sạch dữ liệu", 400);
   }
 
   const slug = await resolveUniqueSlug(submission.title);
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
 
   const insertResult = await createDraftEvent();
   if (insertResult.error || !insertResult.data) {
-    return fail("KhÃ´ng táº¡o Ä‘Æ°á»£c báº£n nhÃ¡p tá»« Ä‘á» xuáº¥t", 500, insertResult.error?.message);
+    return fail("Không tạo được bản nháp từ đề xuất", 500, insertResult.error?.message);
   }
 
   await syncEventRelations({
@@ -335,7 +335,7 @@ export async function POST(request: NextRequest) {
 
   if (updateSubmissionError) {
     return fail(
-      "ÄÃ£ táº¡o báº£n nhÃ¡p nhÆ°ng cáº­p nháº­t bÃ i gá»­i tháº¥t báº¡i",
+      "Đã tạo bản nháp nhưng cập nhật bài gửi thất bại",
       500,
       updateSubmissionError.message
     );
@@ -345,8 +345,8 @@ export async function POST(request: NextRequest) {
     if (submission.submitted_by) {
       await pushNotificationToUser(admin, submission.submitted_by, {
         type: "submission_reviewed",
-        title: "Äá» xuáº¥t Ä‘Ã£ Ä‘Æ°á»£c duyá»‡t",
-        body: "Äá» xuáº¥t cá»§a báº¡n Ä‘Ã£ Ä‘Æ°á»£c duyá»‡t vÃ  chuyá»ƒn thÃ nh báº£n nhÃ¡p Ä‘á»ƒ admin biÃªn táº­p trÆ°á»›c khi xuáº¥t báº£n.",
+        title: "Đề xuất đã được duyệt",
+        body: "Đề xuất của bạn đã được duyệt và chuyển thành bản nháp để admin biên tập trước khi xuất bản.",
         link: "/thong-bao",
         metadata: {
           submissionId: submission.id,
@@ -365,8 +365,8 @@ export async function POST(request: NextRequest) {
     if (notifyIds.length > 0) {
       await pushNotificationToUsers(admin, notifyIds, {
         type: "admin_broadcast",
-        title: "CÃ³ Ä‘á» xuáº¥t Ä‘Ã£ Ä‘Æ°á»£c duyá»‡t",
-        body: `Äá» xuáº¥t "${submission.title}" Ä‘Ã£ Ä‘Æ°á»£c duyá»‡t vÃ  chuyá»ƒn sang báº£n nhÃ¡p.`,
+        title: "Có đề xuất đã được duyệt",
+        body: `Đề xuất "${submission.title}" đã được duyệt và chuyển sang bản nháp.`,
         link: "/admin/su-kien",
         metadata: {
           submissionId: submission.id,

@@ -30,18 +30,27 @@ const ALLOWED_TAGS = [
 
 const ALLOWED_CLASSES = {
   div: ["media-side", "media-gallery"],
-  img: ["media-side-image", "media-gallery-image"],
+  img: ["media-side-image", "media-gallery-image", "media-image-center", "media-image-full"],
   p: ["media-side-text"]
 };
+
+const COLOR_STYLE_PATTERNS = [
+  /^#[0-9a-f]{3}([0-9a-f]{3})?$/i,
+  /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i,
+  /^rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*(0(\.\d+)?|1(\.0+)?)\s*\)$/i
+];
 
 export function sanitizeRichContentHtml(input: string) {
   const sanitized = sanitizeHtml(input, {
     allowedTags: [...ALLOWED_TAGS],
     allowedAttributes: {
       a: ["href", "target", "rel"],
-      img: ["src", "alt", "title", "class", "loading"],
-      div: ["class"],
-      p: ["class"],
+      img: ["src", "alt", "title", "class", "loading", "style"],
+      div: ["class", "style"],
+      p: ["class", "style"],
+      h2: ["style"],
+      h3: ["style"],
+      span: ["style"],
       table: ["class"]
     },
     allowedSchemes: ["http", "https", "data"],
@@ -49,6 +58,12 @@ export function sanitizeRichContentHtml(input: string) {
       img: ["http", "https", "data"]
     },
     allowedClasses: ALLOWED_CLASSES,
+    allowedStyles: {
+      "*": {
+        color: COLOR_STYLE_PATTERNS,
+        "text-align": [/^left$/, /^center$/, /^right$/, /^justify$/]
+      }
+    },
     transformTags: {
       a: sanitizeHtml.simpleTransform("a", {
         target: "_blank",

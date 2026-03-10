@@ -64,7 +64,7 @@ const submissionSchema = z
         day: value.startDay
       },
       {
-        label: "Má»‘c báº¯t Ä‘áº§u"
+        label: "Mốc bắt đầu"
       }
     );
     const endErrors = validateFlexibleDate(
@@ -74,7 +74,7 @@ const submissionSchema = z
         day: value.endDay
       },
       {
-        label: "Má»‘c káº¿t thÃºc"
+        label: "Mốc kết thúc"
       }
     );
     const rangeErrors = validateFlexibleDateRange(
@@ -100,7 +100,7 @@ const submissionSchema = z
 
 export async function POST(request: NextRequest) {
   const { user } = await getAuthUserFromRequest(request);
-  if (!user) return fail("Cáº§n Ä‘Äƒng nháº­p", 401);
+  if (!user) return fail("Cần đăng nhập", 401);
 
   const ip = readClientIp(request) ?? "unknown";
   const limiter = checkRateLimit({
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     windowMs: 10 * 60_000
   });
   if (!limiter.allowed) {
-    return fail("Báº¡n gá»­i Ä‘á» xuáº¥t quÃ¡ nhanh", 429);
+    return fail("Bạn gửi đề xuất quá nhanh", 429);
   }
 
   const json = await request.json();

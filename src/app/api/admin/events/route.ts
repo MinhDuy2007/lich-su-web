@@ -10,6 +10,7 @@ import { extractImageUrlsFromHtml, sanitizeRichContentHtml } from "@/lib/rich-co
 import { resolveSourceIds } from "@/lib/event-sources";
 import { buildEventDateColumns, getDefaultEventStatusForRole } from "@/lib/event-persistence";
 import { isMissingColumnError } from "@/lib/db-compat";
+import { pushNotificationToUsers } from "@/lib/notifications";
 import { loadLatestRoleByUserIds } from "@/lib/user-ip-log";
 
 async function resolveUniqueSlug(baseValue: string) {
@@ -37,6 +38,30 @@ async function resolveUniqueSlug(baseValue: string) {
   }
 
   return `${normalizedBase}-${Date.now()}`.slice(0, 160);
+}
+
+async function fetchAdminUserIds(admin: ReturnType<typeof createSupabaseAdmin>) {
+  const rolesResult = await admin
+    .from("user_roles")
+    .select("user_id,role,created_at")
+    .eq("role", "admin")
+    .order("created_at", { ascending: false });
+
+  if (rolesResult.error) {
+    throw new Error(rolesResult.error.message);
+  }
+
+  const seen = new Set<string>();
+  const userIds: string[] = [];
+  for (const row of rolesResult.data ?? []) {
+    if (!row.user_id || seen.has(row.user_id)) {
+      continue;
+    }
+    seen.add(row.user_id);
+    userIds.push(row.user_id);
+  }
+
+  return userIds;
 }
 
 export async function GET(request: NextRequest) {
@@ -238,7 +263,7 @@ export async function POST(request: NextRequest) {
         created_by: access.userId,
         updated_by: access.userId
       })
-      .select("id")
+      .select("id,status")
       .single();
 
     if (isMissingFlexibleDateColumnsError(nextResult.error)) {
@@ -258,7 +283,7 @@ export async function POST(request: NextRequest) {
           created_by: access.userId,
           updated_by: access.userId
         })
-        .select("id")
+        .select("id,status")
         .single();
     }
 
@@ -287,6 +312,46 @@ export async function POST(request: NextRequest) {
     sourceIds: mergedSourceIds,
     imageUrls: mergedImageUrls
   });
+
+  try {
+    const createdStatus = data.status ?? defaultStatus;
+    if (access.role === "moderator" && createdStatus === "pending") {
+      const adminIds = await fetchAdminUserIds(admin);
+      const notifyIds = adminIds.filter((userId) => userId !== access.userId);
+      if (notifyIds.length > 0) {
+        const profileResult = await admin
+          .from("profiles")
+          .select("username,display_name")
+          .eq("user_id", access.userId)
+          .maybeSingle();
+
+        const actorUsername = profileResult.data?.username?.trim() || "";
+        const actorDisplayName =
+          profileResult.data?.display_name?.trim() ||
+          profileResult.data?.username?.trim() ||
+          "Kiểm duyệt viên";
+        const actorLabel = actorUsername
+          ? `${actorDisplayName} (@${actorUsername})`
+          : actorDisplayName;
+
+        await pushNotificationToUsers(admin, notifyIds, {
+          type: "admin_broadcast",
+          title: "Có bài viết mới từ kiểm duyệt viên",
+          body: `${actorLabel} vừa gửi bài "${payload.title}". Vui lòng vào mục kiểm duyệt để xem xét.`,
+          link: "/admin/kiem-duyet?tab=bai-viet-kiem-duyet-vien",
+          metadata: {
+            eventId: data.id,
+            submittedBy: access.userId,
+            submittedByUsername: actorUsername || null,
+            submittedByRole: "moderator",
+            status: createdStatus
+          }
+        });
+      }
+    }
+  } catch {
+    // Do not fail event creation when notification insertion fails.
+  }
 
   return ok({ eventId: data.id }, 201);
 }

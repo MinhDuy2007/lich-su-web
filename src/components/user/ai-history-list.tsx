@@ -72,7 +72,7 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
   if (rows.length === 0) {
     return (
       <div className="card-glass rounded-2xl p-5 text-sm text-fg/65">
-        Chua co lich su AI.
+        Chưa có lịch sử
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
       <section className="card-glass rounded-2xl p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-fg/70">
-            Lich su hoi dap
+            Lịch sử hỏi đáp
           </h2>
           <button
             className="rounded-lg border border-red-400 px-2 py-1 text-xs text-red-500 disabled:opacity-60"
@@ -142,7 +142,7 @@ export function AiHistoryList({ items }: AiHistoryListProps) {
             </div>
           </>
         ) : (
-          <p className="text-sm text-fg/65">Chon mot ban ghi de xem chi tiet.</p>
+          <p className="text-sm text-fg/65">Chọn 1 phiên để xem chi tiết</p>
         )}
       </section>
     </div>

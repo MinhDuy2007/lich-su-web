@@ -177,6 +177,12 @@ export const moderationActionSchema = z.object({
   note: z.string().max(500).optional()
 });
 
+export const moderatorEventReviewSchema = z.object({
+  eventId: z.string().uuid(),
+  action: z.enum(["approve", "reject"]),
+  note: z.string().trim().max(500).optional()
+});
+
 export const userBanSchema = z.object({
   userId: z.string().uuid(),
   isBanned: z.boolean(),

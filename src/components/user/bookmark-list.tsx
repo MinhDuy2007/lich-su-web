@@ -43,7 +43,7 @@ export function BookmarkList({ items }: BookmarkListProps) {
   if (rows.length === 0) {
     return (
       <div className="card-glass rounded-2xl p-5 text-sm text-fg/65">
-        Ban chua co su kien nao trong bookmark.
+        Bạn chưa lưu sự kiện nào
       </div>
     );
   }

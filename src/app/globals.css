@@ -116,6 +116,20 @@ a {
   border-radius: 0.75rem;
 }
 
+.tiptap img.media-image-center,
+.rich-content img.media-image-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tiptap img.media-image-full,
+.rich-content img.media-image-full {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
 .tiptap table,
 .rich-content table {
   margin: 1rem 0;

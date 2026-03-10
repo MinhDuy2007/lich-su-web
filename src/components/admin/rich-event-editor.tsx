@@ -5,23 +5,34 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
+import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
   Bold,
+  Eraser,
   ImagePlus,
   Italic,
+  Link2,
   List,
   ListOrdered,
+  Palette,
   Pilcrow,
   Quote,
   SeparatorHorizontal,
   Underline as UnderlineIcon,
   Columns2,
-  LayoutGrid
+  LayoutGrid,
+  Unlink
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
@@ -38,6 +49,22 @@ interface UploadEnvelope {
   data?: {
     url: string;
   };
+}
+
+function normalizeColorValue(input: unknown) {
+  if (typeof input !== "string") {
+    return "#f97316";
+  }
+
+  const value = input.trim();
+  if (/^#[0-9a-f]{6}$/i.test(value)) {
+    return value;
+  }
+  if (/^#[0-9a-f]{3}$/i.test(value)) {
+    const [r, g, b] = value.slice(1).split("");
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  return "#f97316";
 }
 
 function escapeHtml(input: string) {
@@ -80,6 +107,18 @@ export function RichEventEditor({ value, onChange, disabled = false }: RichEvent
         heading: { levels: [2, 3] }
       }),
       Underline,
+      TextStyle,
+      Color,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        protocols: ["http", "https"]
+      }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+        alignments: ["left", "center", "right", "justify"],
+        defaultAlignment: "left"
+      }),
       Image.configure({
         inline: false,
         allowBase64: false
@@ -178,6 +217,34 @@ export function RichEventEditor({ value, onChange, disabled = false }: RichEvent
     fileInputRef.current?.click();
   }
 
+  function onSetLink() {
+    if (!editor) {
+      return;
+    }
+
+    const currentHref = (editor.getAttributes("link").href as string | undefined) ?? "";
+    const rawInput = window.prompt("Nhập liên kết (https://...)", currentHref || "https://");
+    if (rawInput === null) {
+      return;
+    }
+
+    const nextUrl = rawInput.trim();
+    if (!nextUrl) {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+
+    const normalizedUrl = /^https?:\/\//i.test(nextUrl) ? nextUrl : `https://${nextUrl}`;
+    editor.chain().focus().extendMarkRange("link").setLink({ href: normalizedUrl }).run();
+  }
+
+  function onUnsetLink() {
+    if (!editor) {
+      return;
+    }
+    editor.chain().focus().unsetLink().run();
+  }
+
   function onInsertSideBySideLayout() {
     if (!editor) {
       return;
@@ -202,6 +269,24 @@ export function RichEventEditor({ value, onChange, disabled = false }: RichEvent
       .insertTable({ rows: 1, cols: 3, withHeaderRow: false })
       .run();
     toast.message("Đã chèn khung gallery 3 cột. Bạn có thể tải ảnh vào từng ô.");
+  }
+
+  function setImageClass(className: string | null) {
+    if (!editor) {
+      return;
+    }
+
+    const updated = editor
+      .chain()
+      .focus()
+      .updateAttributes("image", {
+        class: className || null
+      })
+      .run();
+
+    if (!updated) {
+      toast.message("Hãy đặt con trỏ vào ảnh cần căn chỉnh.");
+    }
   }
 
   function ToolbarButton({
@@ -295,8 +380,68 @@ export function RichEventEditor({ value, onChange, disabled = false }: RichEvent
         >
           <SeparatorHorizontal className="h-4 w-4" />
         </ToolbarButton>
+        <ToolbarButton
+          active={editor?.isActive({ textAlign: "left" })}
+          label="Canh trái"
+          onClick={() => editor?.chain().focus().setTextAlign("left").run()}
+        >
+          <AlignLeft className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor?.isActive({ textAlign: "center" })}
+          label="Canh giữa"
+          onClick={() => editor?.chain().focus().setTextAlign("center").run()}
+        >
+          <AlignCenter className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor?.isActive({ textAlign: "justify" })}
+          label="Canh đều hai bên"
+          onClick={() => editor?.chain().focus().setTextAlign("justify").run()}
+        >
+          <AlignJustify className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor?.isActive("link")}
+          label="Chèn liên kết"
+          onClick={onSetLink}
+        >
+          <Link2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Bỏ liên kết" onClick={onUnsetLink}>
+          <Unlink className="h-4 w-4" />
+        </ToolbarButton>
+        <label
+          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border text-fg/80 transition hover:border-primary/45 hover:text-primary"
+          title="Đổi màu chữ"
+        >
+          <Palette className="h-4 w-4" />
+          <input
+            className="sr-only"
+            onChange={(event) =>
+              editor?.chain().focus().setColor(event.target.value).run()
+            }
+            type="color"
+            value={normalizeColorValue(editor?.getAttributes("textStyle").color)}
+          />
+        </label>
+        <ToolbarButton
+          label="Xóa màu chữ"
+          onClick={() => editor?.chain().focus().unsetColor().run()}
+        >
+          <Eraser className="h-4 w-4" />
+        </ToolbarButton>
         <ToolbarButton label="Tải ảnh lên" onClick={onPickImage}>
           <ImagePlus className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Ảnh mặc định" onClick={() => setImageClass(null)}>
+          <AlignLeft className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Ảnh giữa trang" onClick={() => setImageClass("media-image-center")}>
+          <AlignCenter className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Ảnh sát mép ngang" onClick={() => setImageClass("media-image-full")}>
+          <AlignJustify className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton label="Bố cục ảnh và chữ" onClick={onInsertSideBySideLayout}>
           <Columns2 className="h-4 w-4" />
