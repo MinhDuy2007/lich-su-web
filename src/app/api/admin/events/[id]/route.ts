@@ -16,6 +16,25 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
+function isMissingFlexibleDateColumnsError(
+  error: {
+    code?: string | null;
+    message?: string | null;
+    details?: string | null;
+  } | null
+) {
+  return isMissingColumnError(error, [
+    "start_year",
+    "start_month",
+    "start_day",
+    "start_precision",
+    "end_year",
+    "end_month",
+    "end_day",
+    "end_precision"
+  ]);
+}
+
 async function resolveUniqueSlugForUpdate(eventId: string, baseValue: string) {
   const admin = createSupabaseAdmin();
   const normalizedBase = slugify(baseValue).slice(0, 160) || "su-kien";
@@ -133,7 +152,7 @@ export async function PATCH(request: NextRequest, context: Params) {
         .eq("id", id)
     ).error ?? null;
 
-  if (isMissingColumnError(error, ["start_year", "start_month", "start_day"])) {
+  if (isMissingFlexibleDateColumnsError(error)) {
     error =
       (
         await admin

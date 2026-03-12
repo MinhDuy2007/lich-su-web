@@ -229,16 +229,17 @@ export function formatFlexibleDateRange(
 ) {
   const startLabel = formatFlexibleDate(start, fallback?.startDate ?? null);
   const endLabel = formatFlexibleDate(end, fallback?.endDate ?? null);
-  const startPrecision = resolvePartialDatePrecision(start);
-  const endPrecision = resolvePartialDatePrecision(end);
 
-  if (startPrecision === "unknown" && endPrecision === "unknown") {
+  const hasStart = startLabel !== "Chưa rõ";
+  const hasEnd = endLabel !== "Chưa rõ";
+
+  if (!hasStart && !hasEnd) {
     return "Chưa rõ mốc thời gian";
   }
-  if (startPrecision !== "unknown" && endPrecision !== "unknown") {
+  if (hasStart && hasEnd) {
     return `${startLabel} - ${endLabel}`;
   }
-  if (startPrecision !== "unknown") {
+  if (hasStart) {
     return `Từ ${startLabel}`;
   }
 

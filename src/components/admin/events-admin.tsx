@@ -132,6 +132,31 @@ function toDraft(value: number | null | undefined, padLength?: number) {
   return padLength ? String(value).padStart(padLength, "0") : String(value);
 }
 
+function parseIsoDateParts(value: string | null | undefined) {
+  if (!value) {
+    return {
+      year: null,
+      month: null,
+      day: null
+    };
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
+  if (!match) {
+    return {
+      year: null,
+      month: null,
+      day: null
+    };
+  }
+
+  return {
+    year: Number.parseInt(match[1], 10),
+    month: Number.parseInt(match[2], 10),
+    day: Number.parseInt(match[3], 10)
+  };
+}
+
 function formatDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -254,6 +279,8 @@ export function EventsAdmin({ role }: EventsAdminProps) {
       }
 
       const detail = payload.data;
+      const fallbackStartDate = parseIsoDateParts(detail.start_date);
+      const fallbackEndDate = parseIsoDateParts(detail.end_date);
       setEditingEventId(detail.id);
       setEditingStatus(detail.status ?? null);
       setForm({
@@ -261,14 +288,14 @@ export function EventsAdmin({ role }: EventsAdminProps) {
         summary: detail.summary ?? "",
         content: detail.content ?? "",
         startDate: {
-          day: toDraft(detail.start_day, 2),
-          month: toDraft(detail.start_month, 2),
-          year: toDraft(detail.start_year)
+          day: toDraft(detail.start_day ?? fallbackStartDate.day, 2),
+          month: toDraft(detail.start_month ?? fallbackStartDate.month, 2),
+          year: toDraft(detail.start_year ?? fallbackStartDate.year)
         },
         endDate: {
-          day: toDraft(detail.end_day, 2),
-          month: toDraft(detail.end_month, 2),
-          year: toDraft(detail.end_year)
+          day: toDraft(detail.end_day ?? fallbackEndDate.day, 2),
+          month: toDraft(detail.end_month ?? fallbackEndDate.month, 2),
+          year: toDraft(detail.end_year ?? fallbackEndDate.year)
         },
         eventType: detail.event_type ?? "",
         locationText: detail.location_text ?? "",
@@ -350,9 +377,14 @@ export function EventsAdmin({ role }: EventsAdminProps) {
         throw new Error(payload.message ?? "Lưu sự kiện thất bại");
       }
 
-      toast.success(editingEventId ? "Đã cập nhật sự kiện" : "Đã tạo sự kiện mới");
-      resetForm();
+      const updatedEventId = editingEventId;
+      toast.success(updatedEventId ? "Đã cập nhật sự kiện" : "Đã tạo sự kiện mới");
       await loadDashboardData();
+      if (updatedEventId) {
+        await startEdit(updatedEventId);
+      } else {
+        resetForm();
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Lưu sự kiện thất bại");
     } finally {

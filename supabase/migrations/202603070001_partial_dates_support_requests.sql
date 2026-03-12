@@ -158,7 +158,9 @@ to authenticated
 using (public.is_staff(auth.uid()))
 with check (public.is_staff(auth.uid()));
 
-create or replace view public.events_view as
+drop view if exists public.events_view;
+
+create view public.events_view as
 select
   e.id,
   e.slug,
